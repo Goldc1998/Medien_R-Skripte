@@ -47,9 +47,9 @@ medium_plot <- ggplot(articles_per_medium_year, aes(x = Year, y = Count, color =
   geom_line(size = 1) +
   theme_minimal() +
   labs(
-    title = "Häufigkeit der Berichterstattung pro Medium (Der Tagesspiegel, Die Zeit, Frankfurter Allgemeine Zeitung)",
+    title = "Häufigkeit der Textstellen nach Medium pro Jahr",
     x = "Jahr",
-    y = "Anzahl der Artikel",
+    y = "Anzahl der Textstellen",
     color = "Medium"
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
