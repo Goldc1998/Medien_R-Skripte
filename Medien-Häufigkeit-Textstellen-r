@@ -30,7 +30,7 @@ article_plot <- ggplot(articles_per_year, aes(x = Year, y = n)) +
   labs(
     title = "Anzahl der Artikel pro Jahr (2000-2023)",
     x = "Jahr",
-    y = "Anzahl der Artikel"
+    y = "Anzahl Textstellen"
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -48,9 +48,19 @@ articles_per_month <- medien_combined_cleaned %>%
   arrange(desc(n)) %>%
   slice(1:10)
 
-# Speichere die Tabelle der 10 Monate als PNG
-t <- tableGrob(articles_per_month, rows = NULL)
-ggsave("Top10_Monate.png", plot = grid.arrange(t), width = 6, height = 4)
+# Visualisierung der 10 Monate mit den häufigsten Textstellen
+monthly_plot <- ggplot(articles_per_month, aes(x = reorder(Month, n), y = n)) +
+  geom_col(fill = "coral") +
+  coord_flip() +
+  labs(
+    title = "10 Monate mit den häufigsten Vorkommen an Textstellen",
+    x = "Monat und Jahr",
+    y = "Häufigkeit der Textstellen"
+  ) +
+  theme_minimal()
+
+# Speichere das Balkendiagramm als PNG
+ggsave("Top10_Monate.png", plot = monthly_plot, width = 10, height = 6)
 
 # Speichere die Tabelle der 10 Monate als CSV
 write_csv(articles_per_month, "Top10_Monate.csv")
@@ -64,3 +74,4 @@ cat("Die insgesamt gefundenen Textstellen betragen:", total_text_count, "\n")
 # Speichere die Gesamtanzahl in eine CSV-Datei
 total_count_df <- data.frame(Total_Text_Count = total_text_count)
 write_csv(total_count_df, "Gesamtanzahl_Textstellen.csv")
+
