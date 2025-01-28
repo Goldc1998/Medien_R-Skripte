@@ -1,0 +1,63 @@
+# Installiere die erforderlichen Pakete
+required_packages <- c("readr", "dplyr", "tidyverse", "tm", "textclean", "textTinyR", "syuzhet", "ggplot2")
+
+# Prüfe und installiere fehlende Pakete
+new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+if (length(new_packages)) install.packages(new_packages)
+
+# Lade die Pakete
+lapply(required_packages, library, character.only = TRUE)
+
+# Funktion zum Kombinieren der CSV-Dateien 
+combine_csv_files <- function(file_list) {
+  if (length(file_list) == 0) {
+    stop("Keine CSV-Dateien im Verzeichnis gefunden.")
+  }
+
+  # Einlesen und Kombinieren der CSV-Dateien
+  combined_df <- do.call(rbind, lapply(file_list, function(file_path) {
+    tryCatch({
+      df <- read_csv(file_path)
+      
+      # Überprüfe, ob die Datei leer ist
+      if (nrow(df) == 0) {
+        warning(paste("Datei ist leer:", file_path))
+        return(NULL)
+      }
+      
+      # Entferne die Spalte "No.", 
+      if ("No." %in% colnames(df)) {
+        df <- df %>% select(-"No.")
+      }
+
+      return(df)
+    }, error = function(e) {
+      warning(paste("Fehler beim Einlesen der Datei:", file_path, "Fehler:", e$message))
+      return(NULL)
+    })
+  }))
+
+  # Überprüfe, ob es gültige Daten gibt
+  if (is.null(combined_df) || nrow(combined_df) == 0) {
+    stop("Fehler: Keine gültigen Daten zum Kombinieren gefunden.")
+  }
+
+  # Sortiere die Daten nach dem Datum
+  if ("Date" %in% colnames(combined_df)) {
+    combined_df <- combined_df %>% arrange(as.Date(Date, format="%Y-%m-%d"))
+  }
+
+  # Füge eine neue ID-Spalte hinzu
+  combined_df <- combined_df %>% mutate(NewID = row_number())
+
+  return(combined_df)
+}
+
+#  Kombinieren der CSV-Dateien 
+file_list <- list.files(pattern = "^(FAZ|ZEIT|TAGESSPIEGEL)_.*\\.csv$")  # Das reguläre Ausdruck erfasst alle Dateien, die mit FAZ, ZEIT oder TAGESSPIEGEL beginnen
+medien_combined <- combine_csv_files(file_list)
+
+# Speichern der kombinierten Datei
+write_csv(medien_combined, "MEDIEN.Gesamt.csv")
+
+cat("Die CSV-Dateien wurden erfolgreich kombiniert und gespeichert.\n")
