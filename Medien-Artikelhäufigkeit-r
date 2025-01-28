@@ -1,0 +1,57 @@
+# Benötigte Pakete installieren und laden
+required_packages <- c("readr", "dplyr", "ggplot2")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+if (length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+
+# Datei laden
+medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Sicherstellen, dass die 'Date' Spalte vorhanden ist
+if (!"Date" %in% colnames(medien_combined_cleaned)) {
+  stop("Die 'Date'-Spalte fehlt in den Daten.")
+}
+
+# Konvertiere die 'Date'-Spalte in das richtige Datumsformat
+medien_combined_cleaned <- medien_combined_cleaned %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"))
+
+# **1. Anzahl der Artikel pro Jahr von 2000 bis 2023**
+articles_per_year <- medien_combined_cleaned %>%
+  filter(!is.na(Date)) %>%
+  mutate(Year = format(Date, "%Y")) %>%
+  filter(Year >= 2000 & Year <= 2023) %>%
+  count(Year)
+
+# Visualisierung der Artikel pro Jahr
+article_plot <- ggplot(articles_per_year, aes(x = Year, y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  labs(
+    title = "Anzahl der Artikel pro Jahr (2000-2023)",
+    x = "Jahr",
+    y = "Anzahl der Artikel"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Speichere die Grafik als PNG
+ggsave("Artikel_Pro_Jahr.png", plot = article_plot, width = 8, height = 6)
+
+# **2. Die 10 Monate mit den häufigsten Textstellen**
+articles_per_month <- medien_combined_cleaned %>%
+  filter(!is.na(Date)) %>%
+  mutate(Month = format(Date, "%Y-%m")) %>%
+  count(Month) %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
+
+# Speichere die Tabelle der 10 Monate als PNG
+library(gridExtra)
+t <- tableGrob(articles_per_month, rows = NULL)
+ggsave("Top10_Monate.png", plot = grid.arrange(t), width = 6, height = 4)
+
+# **3. Gesamtanzahl der gefundenen Textstellen**
+total_text_count <- nrow(medien_combined_cleaned)
+
+# Ausgabe der Gesamtanzahl
+cat("Die insgesamt gefundenen Textstellen betragen:", total_text_count, "\n")
