@@ -1,0 +1,66 @@
+# Benötigte Pakete installieren und laden
+if (!require(tm)) install.packages("tm")
+if (!require(slam)) install.packages("slam")
+if (!require(widyr)) install.packages("widyr")
+if (!require(ggraph)) install.packages("ggraph")
+if (!require(igraph)) install.packages("igraph")
+if (!require(dplyr)) install.packages("dplyr")
+if (!require(tidytext)) install.packages("tidytext")
+
+library(tm)
+library(slam)
+library(widyr)
+library(ggraph)
+library(igraph)
+library(dplyr)
+library(tidytext)
+
+# Den Korpus laden (Pfad anpassen, falls nötig)
+data <- read.csv("Medien_Gesamt_bereinigt.csv", stringsAsFactors = FALSE)
+
+# Überprüfen, ob die Spalte "cleaned_hits" vorhanden ist
+if (!"cleaned_hits" %in% colnames(data)) {
+  stop("Die Spalte 'cleaned_hits' ist nicht im Datensatz enthalten!")
+}
+
+# Nur die Spalte "cleaned_hits" verwenden
+cleaned_hits <- data$cleaned_hits
+
+# Definiere die Liste der Stopwörter, einschließlich der hinzugefügten Wörter
+custom_stopwords <- c("ab", "wegen", "ersten", "dabei")
+
+# Tokenisieren der "cleaned_hits"-Spalte in einzelne Wörter
+hits_words <- tibble(id = 1:length(cleaned_hits), text = cleaned_hits) %>%
+  unnest_tokens(word, text)  # Tokenisieren in einzelne Wörter
+
+# Entferne Stopwörter
+hits_words_clean <- hits_words %>%
+  filter(!word %in% custom_stopwords)
+
+# Wortpaare aus der "cleaned_hits"-Spalte berechnen
+word_pairs <- hits_words_clean %>% 
+  pairwise_count(word, id, sort = TRUE, upper = FALSE)  # Wortpaare berechnen
+
+# Wortpaare mit einer Mindestanzahl von 2700 (z.B. nur häufige Paare)
+word_pairs_filtered <- word_pairs %>% 
+  filter(n >= 2700)  # Filtert nur Paare mit mindestens 2700 Vorkommen
+
+# Visualisierung der Wortpaare aus "cleaned_hits" als Netzwerk
+set.seed(1234)
+word_pairs_filtered %>% 
+  graph_from_data_frame() %>% 
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 3) +  # Kleinere Knotenpunkte (von 5 auf 3 reduziert)
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines"),
+                 max.overlaps = 500,  # Erhöhte max.overlaps auf 500
+                 size = 3) +  # Kleinere Schriftgröße für die Labels
+  theme_void() +
+  ggtitle("Wortpaare aus der 'cleaned_hits'-Spalte (min. 2700 Vorkommen)") +
+  theme(legend.position = "none")  # Entfernen der Legende
+
+# Speichern der Visualisierung
+ggsave("word_pairs_network_min2700.png", width = 10, height = 6)
+
+cat("Die Visualisierung wurde als 'word_pairs_network_min_2700.png' gespeichert.\n")
