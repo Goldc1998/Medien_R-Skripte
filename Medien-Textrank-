@@ -1,0 +1,61 @@
+# Sicherstellen, dass alle benötigten Pakete installiert sind
+packages <- c("dplyr", "readr", "tidytext", "stringr", "igraph", "ggraph", "tidyr", "stopwords")
+new.packages <- packages[!(packages %in% installed.packages()[,"Package"])]
+if (length(new.packages)) install.packages(new.packages)
+
+# Bibliotheken laden
+lapply(packages, library, character.only = TRUE)
+
+# Bereinigte Daten einlesen
+text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Überprüfen der eingelesenen Daten
+print(head(text_data))
+print(str(text_data))
+
+# Füge NewID-Spalte als Integer hinzu
+text_data <- text_data %>%
+  mutate(NewID = as.integer(row_number())) # Aktuelle Zeilennummer als ID und als Integer umwandeln
+
+# Bigram-Tokenisierung für Kanten-Erstellung aus der `cleaned_hits`-Spalte
+text_rank_data <- text_data %>%
+  unnest_tokens(bigram, cleaned_hits, token = "ngrams", n = 2) %>% # Erstelle Bigramme aus `cleaned_hits`
+  separate(bigram, into = c("word1", "word2"), sep = " ", extra = "merge", fill = "right") %>% # Trenne Bigramme
+  filter(!is.na(word1) & !is.na(word2) & # Entferne leere Werte
+           nchar(word1) >= 3 & nchar(word2) >= 3) %>% # Filtere Wörter mit weniger als 3 Zeichen
+  filter(!word1 %in% stopwords::stopwords("de") & !word2 %in% stopwords::stopwords("de")) %>% # Entferne deutsche Stoppwörter
+  count(word1, word2, sort = TRUE) # Zähle die Bigramme
+
+# Überprüfen der Bigram-Daten
+print(head(text_rank_data)) # Zeige die ersten paar Zeilen
+
+# Beschränkung der Anzahl an Kanten (z.B. auf die 100 häufigsten)
+top_n_edges <- text_rank_data %>%
+  top_n(100, n) # Top 100 Kanten nach Häufigkeit
+
+# Erstelle den Graphen aus den begrenzten Kanten
+if (nrow(top_n_edges) == 0) stop("Keine Bigram-Daten vorhanden; überprüfe die Eingaben.")
+graph <- graph_from_data_frame(top_n_edges, directed = FALSE)
+
+# Prüfen, ob der Graph Knoten hat
+if (vcount(graph) == 0) stop("Die erstellte Grafik enthält keine Knoten; überprüfe die Dateneingabe.")
+
+# Ausgabe der Knoteninformationen
+print(paste("Anzahl der Knoten:", vcount(graph))) # Anzahl der Knoten im Graphen
+print(paste("Anzahl der Kanten:", ecount(graph))) # Anzahl der Kanten im Graphen
+
+# Füge TextRank zu den Knoten hinzu
+V(graph)$pagerank <- page_rank(graph)$vector
+
+# Visualisieren von TextRank
+plot <- ggraph(graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = 0.3), color = "grey") +
+  geom_node_point(aes(size = pagerank * 10, color = pagerank), show.legend = TRUE) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  labs(title = "TextRank Visualisierung (Top Kanten)", subtitle = "Begrenzte Knoten und Kanten") +
+  theme_void()
+
+# Speichern der Visualisierung als PDF
+ggsave("2.Medien.text_rank_visualisierung_top_kanten.pdf", plot = plot, width = 10, height = 8)
+print("Die Visualisierung wurde erfolgreich in '2.Medien.text_rank_visualisierung_top_kanten.pdf' gespeichert.")
+
