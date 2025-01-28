@@ -1,0 +1,63 @@
+# Sicherstellen, dass alle benötigten Pakete installiert sind
+packages <- c("dplyr", "readr", "tidytext", "stringr", "ggplot2", "tidyr", "purrr")
+new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
+if (length(new.packages)) install.packages(new.packages)
+lapply(packages, library, character.only = TRUE)
+
+# Daten einlesen
+text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Sicherstellen, dass die Spalte `cleaned_hits` existiert
+if (!"cleaned_hits" %in% colnames(text_data)) {
+  stop("Die Spalte 'cleaned_hits' fehlt in der Daten-Datei.")
+}
+
+### HÄUFIGSTE BIGRAMME ###
+bigram_data <- text_data %>%
+  unnest_tokens(bigram, cleaned_hits, token = "ngrams", n = 2) %>%  # Erstelle Bigramme
+  filter(str_detect(bigram, "palastin")) %>%  # Filtere nach Bigrammen, die „palastin“ enthalten
+  separate(bigram, into = c("word1", "word2"), sep = " ", extra = "merge", fill = "right") %>%
+  filter(!is.na(word1) & !is.na(word2)) %>%
+  mutate(pair = if_else(word1 < word2, paste(word1, word2), paste(word2, word1))) %>%  # Unabhängig von Reihenfolge
+  count(pair, sort = TRUE) %>%
+  rename(bigram = pair, frequency = n)  # Benenne Spalten für Klarheit
+
+# Speichern der Bigramme als CSV
+write_csv(bigram_data[1:30, ], "30_Haeufigste_Bigramme_Palastin.csv")
+
+# Visualisierung der Bigramme als PNG
+bigram_plot <- ggplot(bigram_data[1:30, ], aes(x = reorder(bigram, frequency), y = frequency)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "30 häufigste Bigramme mit 'Palästin'",
+       x = "Bigramme",
+       y = "Häufigkeit") +
+  theme_minimal()
+
+ggsave("30_Haeufigste_Bigramme_Palastin.png", bigram_plot, width = 10, height = 8)
+print("Die 30 häufigsten Bigramme wurden als CSV und PNG gespeichert.")
+
+### HÄUFIGSTE TRIGRAMME ###
+trigram_data <- text_data %>%
+  unnest_tokens(trigram, cleaned_hits, token = "ngrams", n = 3) %>%  # Erstelle Trigramme
+  filter(str_detect(trigram, "palastin")) %>%  # Filtere nach Trigrammen, die „palastin“ enthalten
+  separate(trigram, into = c("word1", "word2", "word3"), sep = " ", extra = "merge", fill = "right") %>%
+  filter(!is.na(word1) & !is.na(word2) & !is.na(word3)) %>%
+  mutate(triplet = pmap_chr(list(word1, word2, word3), ~ paste(sort(c(...)), collapse = " "))) %>%  # Sortiere Wörter alphabetisch
+  count(triplet, sort = TRUE) %>%
+  rename(trigram = triplet, frequency = n)  # Benenne Spalten für Klarheit
+
+# Speichern der Trigramme als CSV
+write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme_Palastin.csv")
+
+# Visualisierung der Trigramme als PNG
+trigram_plot <- ggplot(trigram_data[1:30, ], aes(x = reorder(trigram, frequency), y = frequency)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "30 häufigste Trigramme mit 'Palästin'",
+       x = "Trigramme",
+       y = "Häufigkeit") +
+  theme_minimal()
+
+ggsave("30_Haeufigste_Trigramme_Palastin.png", trigram_plot, width = 10, height = 8)
+print("Die 30 häufigsten Trigramme wurden als CSV und PNG gespeichert.")
