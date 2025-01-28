@@ -1,0 +1,52 @@
+# Sicherstellen, dass alle benötigten Pakete installiert sind
+packages <- c("dplyr", "readr", "tidytext", "stringr", "igraph", "ggraph", "tidyr", "stopwords")
+new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
+if (length(new.packages)) install.packages(new.packages)
+lapply(packages, library, character.only = TRUE)
+
+# Daten einlesen
+text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Sicherstellen, dass die Spalte `cleaned_hits` existiert
+if (!"cleaned_hits" %in% colnames(text_data)) {
+  stop("Die Spalte 'cleaned_hits' fehlt in der Daten-Datei.")
+}
+
+# Extrahieren und Zählen der häufigsten Trigramme mit dem Wort „Palästin“
+text_rank_data <- text_data %>%
+  unnest_tokens(trigram, cleaned_hits, token = "ngrams", n = 3) %>%  # Erstelle Trigramme
+  filter(str_detect(trigram, "palastin")) %>%  # Filtere nach Trigrammen, die „palastin“ enthalten
+  separate(trigram, into = c("word1", "word2", "word3"), sep = " ", extra = "merge", fill = "right") %>%
+  filter(!is.na(word1) & !is.na(word2) & !is.na(word3)) %>%
+  count(word1, word2, word3, sort = TRUE) %>%
+  top_n(75, n)  # Top 75 Trigramme nach Häufigkeit
+
+# Überprüfen der Trigramm-Daten
+print(head(text_rank_data))  # Zeige die ersten paar Zeilen
+
+# Erstelle den Graphen aus den Trigrammen
+if (nrow(text_rank_data) == 0) stop("Keine Trigramm-Daten vorhanden; überprüfe die Eingaben.")
+
+# Erstellen eines Graphen der Trigramme
+graph <- graph_from_data_frame(text_rank_data, directed = FALSE)
+
+# Prüfen, ob der Graph Knoten hat
+if (vcount(graph) == 0) stop("Die erstellte Grafik enthält keine Knoten; überprüfe die Dateneingabe.")
+
+# Ausgabe der Knoteninformationen
+print(paste("Anzahl der Knoten:", vcount(graph)))  # Anzahl der Knoten im Graphen
+print(paste("Anzahl der Kanten:", ecount(graph)))  # Anzahl der Kanten im Graphen
+
+# Visualisieren ohne TextRank-Gewichtung (direkt nach Häufigkeit)
+plot <- ggraph(graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = 0.3), color = "grey") +
+  geom_node_point(aes(size = degree(graph)), show.legend = TRUE) +  # Verwendung von Grad (Verbindungen) als Größe
+  geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  labs(title = "Trigramme Visualisierung (Top 75 mit Palästin)", subtitle = "Häufigkeit ohne TextRank-Gewichtung") +
+  theme_void()
+
+# Speichern der Visualisierung als PNG
+ggsave("Trigramme_Visualisierung_Palastin_Top_75_ohne_TextRank.png", plot = plot, width = 10, height = 8)
+
+# Ausgabe der gespeicherten Datei
+print("Die Visualisierung wurde erfolgreich in 'Trigramme_Visualisierung_Palastin_Top_75_ohne_TextRank.png' gespeichert.")
