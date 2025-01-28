@@ -1,5 +1,5 @@
 # Benötigte Pakete installieren und laden
-required_packages <- c("readr", "dplyr", "ggplot2")
+required_packages <- c("readr", "dplyr", "ggplot2", "gridExtra")
 new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
@@ -7,7 +7,7 @@ lapply(required_packages, library, character.only = TRUE)
 # Datei laden
 medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
 
-# Sicherstellen, dass die 'Date' Spalte vorhanden ist
+# Sicherstellen, dass die 'Date'-Spalte vorhanden ist
 if (!"Date" %in% colnames(medien_combined_cleaned)) {
   stop("Die 'Date'-Spalte fehlt in den Daten.")
 }
@@ -34,8 +34,11 @@ article_plot <- ggplot(articles_per_year, aes(x = Year, y = n)) +
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Speichere die Grafik als PNG
+# Speichere das Balkendiagramm als PNG
 ggsave("Artikel_Pro_Jahr.png", plot = article_plot, width = 8, height = 6)
+
+# Speichere die Tabelle der Artikel pro Jahr als CSV
+write_csv(articles_per_year, "Artikel_Pro_Jahr.csv")
 
 # **2. Die 10 Monate mit den häufigsten Textstellen**
 articles_per_month <- medien_combined_cleaned %>%
@@ -46,12 +49,18 @@ articles_per_month <- medien_combined_cleaned %>%
   slice(1:10)
 
 # Speichere die Tabelle der 10 Monate als PNG
-library(gridExtra)
 t <- tableGrob(articles_per_month, rows = NULL)
 ggsave("Top10_Monate.png", plot = grid.arrange(t), width = 6, height = 4)
+
+# Speichere die Tabelle der 10 Monate als CSV
+write_csv(articles_per_month, "Top10_Monate.csv")
 
 # **3. Gesamtanzahl der gefundenen Textstellen**
 total_text_count <- nrow(medien_combined_cleaned)
 
 # Ausgabe der Gesamtanzahl
 cat("Die insgesamt gefundenen Textstellen betragen:", total_text_count, "\n")
+
+# Speichere die Gesamtanzahl in eine CSV-Datei
+total_count_df <- data.frame(Total_Text_Count = total_text_count)
+write_csv(total_count_df, "Gesamtanzahl_Textstellen.csv")
