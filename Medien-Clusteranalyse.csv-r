@@ -1,0 +1,63 @@
+# Pakete laden
+library(dplyr)       # Datenmanipulation
+library(igraph)      # Netzwerkstrukturen
+library(widyr)       # Paarweise Korrelationen und Assoziationen
+library(readr)       # CSV-Dateien einlesen
+library(tidyr)       # Für das Zusammenführen von Wörtern in einer Zeile
+
+# Stoppwörter definieren
+stopwords <- c("dpa", "darauf", "damit", "schreibt", "tageszeitung", "tagesspiegel", "klar", 
+               "dann", "statt", "zu", "von", "bei", "zur", "auch", "dieser", "anderer", 
+               "finden", "falls", "mehr", "andere", "nur", "nicht", "mal", "um", "auf", 
+               "haben", "noch", "ist", "an", "dass", "in", "den", "hier", "z", "f")
+
+# Vereinheitlichung der Begriffe
+replacement_words <- c("staaten" = "staat", "soldaten" = "soldat", "arabische" = "arabien", 
+                       "palastinenserfuhrer" = "palastinenser", "muslime" = "muslim")
+
+# Beispiel-Daten einlesen (ersetze dies mit deinem eigenen Datensatz)
+medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Text bereinigen und in Tokens umwandeln
+cleaned_hits_df <- medien_combined_cleaned %>%
+  select(NewID, cleaned_hits) %>%  # Wähle die relevanten Spalten aus
+  unnest_tokens(word, cleaned_hits) %>%  # Diese Funktion gehört zum 'tidytext' Paket
+  mutate(word = tolower(word))  # Alle Wörter in Kleinbuchstaben umwandeln
+
+# Vereinheitlichung der Wörter, basierend auf der Ersatz-Liste
+cleaned_hits_df <- cleaned_hits_df %>%
+  mutate(word = recode(word, !!!replacement_words))
+
+# Entfernen der Stoppwörter
+cleaned_hits_df <- cleaned_hits_df %>%
+  filter(!word %in% stopwords)
+
+# Berechnung der Korrelationen (nur für Wörter mit mindestens 1000 Vorkommen)
+word_cors <- cleaned_hits_df %>%
+  group_by(word) %>%
+  filter(n() >= 1000) %>%  # Nur Wörter mit mindestens 1000 Vorkommen
+  pairwise_cor(word, NewID, sort = TRUE)  # Berechnung der Paarweisen Korrelation
+
+# Erstellen eines Graphen aus den Korrelationen (nur Korrelationen > 0.1)
+word_network <- word_cors %>% 
+  filter(correlation > 0.1) %>%  # Nur Korrelationen größer als 0.1 verwenden
+  graph_from_data_frame(directed = FALSE)  # Ungerichteter Graph erstellen
+
+# Community-Erkennung mit der Louvain-Methode
+clusters <- cluster_louvain(word_network)
+
+# Cluster-Zugehörigkeiten anzeigen
+membership_info <- membership(clusters)
+
+# Knoten (Wörter) und ihre zugehörigen Cluster-IDs zusammenführen
+cluster_data <- tibble(word = names(membership_info), cluster_id = membership_info)
+
+# Wörter pro Cluster gruppieren und als Liste zusammenfassen
+cluster_grouped <- cluster_data %>%
+  group_by(cluster_id) %>%
+  summarise(words = paste(word, collapse = ", "), .groups = 'drop')
+
+# Cluster-Daten als CSV speichern
+write_csv(cluster_grouped, "cluster_woerter_pro_cluster.csv")
+
+cat("Die Cluster-Wörter wurden erfolgreich als 'cluster_woerter_pro_cluster.csv' gespeichert.\n")
