@@ -50,7 +50,7 @@ articles_per_month <- medien_combined_cleaned %>%
 
 # Visualisierung der 10 Monate mit den häufigsten Textstellen
 monthly_plot <- ggplot(articles_per_month, aes(x = reorder(Month, n), y = n)) +
-  geom_col(fill = "coral") +
+  geom_col(fill = "steelblue") +
   coord_flip() +
   labs(
     title = "10 Monate mit den häufigsten Vorkommen an Textstellen",
