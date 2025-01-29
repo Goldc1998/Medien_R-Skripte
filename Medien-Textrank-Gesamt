@@ -13,12 +13,27 @@ text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
 print(head(text_data))
 print(str(text_data))
 
+# Vereinheitlichung der Begriffe
+replacement_words <- c("ministerprasidenten" = "ministerpräsident", 
+                       "präsidenten" = "präsident", 
+                       "flüchtlige" = "flüchtling", 
+                       "ostens" = "osten", 
+                       "beziehungen" = "beziehung", 
+                       "angriffe" = "angriff", 
+                       "judischen" = "judisch", 
+                       "vereinigten" = "vereinigte")
+
 # Füge NewID-Spalte als Integer hinzu
-text_data <- text_data %>%
+text_data <- text_data %>% 
   mutate(NewID = as.integer(row_number())) # Aktuelle Zeilennummer als ID und als Integer umwandeln
 
+# Bereinigung der Texte und Vereinheitlichung der Begriffe
+text_data_cleaned <- text_data %>%
+  mutate(cleaned_hits = str_to_lower(cleaned_hits)) %>%
+  mutate(cleaned_hits = str_replace_all(cleaned_hits, replacement_words))
+
 # Bigram-Tokenisierung für Kanten-Erstellung aus der `cleaned_hits`-Spalte
-text_rank_data <- text_data %>%
+text_rank_data <- text_data_cleaned %>% 
   unnest_tokens(bigram, cleaned_hits, token = "ngrams", n = 2) %>% # Erstelle Bigramme aus `cleaned_hits`
   separate(bigram, into = c("word1", "word2"), sep = " ", extra = "merge", fill = "right") %>% # Trenne Bigramme
   filter(!is.na(word1) & !is.na(word2) & # Entferne leere Werte
@@ -30,7 +45,7 @@ text_rank_data <- text_data %>%
 print(head(text_rank_data)) # Zeige die ersten paar Zeilen
 
 # Beschränkung der Anzahl an Kanten (z.B. auf die 100 häufigsten)
-top_n_edges <- text_rank_data %>%
+top_n_edges <- text_rank_data %>% 
   top_n(100, n) # Top 100 Kanten nach Häufigkeit
 
 # Erstelle den Graphen aus den begrenzten Kanten
@@ -58,4 +73,5 @@ plot <- ggraph(graph, layout = "fr") +
 # Speichern der Visualisierung als PDF
 ggsave("2.Medien.text_rank_visualisierung_top_kanten.pdf", plot = plot, width = 10, height = 8)
 print("Die Visualisierung wurde erfolgreich in '2.Medien.text_rank_visualisierung_top_kanten.pdf' gespeichert.")
+
 
