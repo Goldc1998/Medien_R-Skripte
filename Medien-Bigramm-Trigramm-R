@@ -50,7 +50,7 @@ write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme.csv")
 
 # Visualisierung der Trigramme als PNG
 trigram_plot <- ggplot(trigram_data[1:30, ], aes(x = reorder(trigram, frequency), y = frequency)) +
-  geom_col(fill = "darkgreen") +
+  geom_col(fill = "steelblue") +
   coord_flip() +
   labs(title = "30 häufigste Trigramme",
        x = "Trigramme",
