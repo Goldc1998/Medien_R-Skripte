@@ -50,7 +50,7 @@ set.seed(1234)
 word_pairs_filtered %>% 
   graph_from_data_frame() %>% 
   ggraph(layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "steelblue") +
   geom_node_point(size = 3) +  # Kleinere Knotenpunkte (von 5 auf 3 reduziert)
   geom_node_text(aes(label = name), repel = TRUE, 
                  point.padding = unit(0.2, "lines"),
