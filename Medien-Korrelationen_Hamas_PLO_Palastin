@@ -1,0 +1,82 @@
+# Pakete laden 
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(readr)
+library(data.table)
+library(ggplot2)
+library(tidytext)
+library(widyr)
+
+# Beispiel-Daten einlesen (ersetze dies mit deinem eigenen Datensatz)
+medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
+
+# Vereinheitlichung der Begriffe
+replacement_words <- c("staaten" = "staat", 
+                       "soldaten" = "soldat", 
+                       "arabische" = "arabien", 
+                       "palastinenserfuhrer" = "palastinenser", 
+                       "muslime" = "muslim",
+                       "islamistischer" = "islamistisch", 
+                       "islamistische" = "islamistisch", 
+                       "islamischer" = "islamisch", 
+                       "islamischen" = "islamisch",
+                       "islamistischen" = "islamistisch")  # Hinzugefügte Ersetzung
+
+# Text bereinigen und in Tokens umwandeln
+cleaned_hits_df <- medien_combined_cleaned %>% 
+  select(NewID, cleaned_hits) %>%  # Wähle die relevanten Spalten aus
+  unnest_tokens(word, cleaned_hits) %>%  # Diese Funktion gehört zum 'tidytext' Paket
+  mutate(word = tolower(word))  # Alle Wörter in Kleinbuchstaben umwandeln
+
+# Vereinheitlichung der Wörter, basierend auf der Ersatz-Liste
+cleaned_hits_df <- cleaned_hits_df %>% 
+  mutate(word = recode(word, !!!replacement_words))
+
+# Berechnung der Korrelationen
+word_cors <- cleaned_hits_df %>% 
+  group_by(word) %>% 
+  filter(n() >= 500) %>%  # Hier filtern wir Wörter, die mindestens 500 Mal vorkommen
+  pairwise_cor(word, NewID, sort = TRUE)
+
+# Visualisierung für "palastin"
+plot_palastin <- word_cors %>% 
+  filter(item1 == "palastin") %>%  # Nur "palastin" wählen
+  slice_max(correlation, n = 20) %>%  # Die Top 20 Korrelationen auswählen
+  ungroup() %>% 
+  mutate(item2 = reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Korrelation", y = "Wort", title = "Wörter mit höchster Korrelation (Palastin)")
+
+# Speichern der Visualisierung für "palastin" als PNG-Datei
+ggsave("wort_korrelationen_top20_palastin.png", plot = plot_palastin, width = 10, height = 6)
+
+# Visualisierung für "hamas"
+plot_hamas <- word_cors %>% 
+  filter(item1 == "hamas") %>%  # Nur "hamas" wählen
+  slice_max(correlation, n = 20) %>%  # Die Top 20 Korrelationen auswählen
+  ungroup() %>% 
+  mutate(item2 = reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Korrelation", y = "Wort", title = "Wörter mit höchster Korrelation (Hamas)")
+
+# Speichern der Visualisierung für "hamas" als PNG-Datei
+ggsave("wort_korrelationen_top20_hamas.png", plot = plot_hamas, width = 10, height = 6)
+
+# Visualisierung für "plo"
+plot_plo <- word_cors %>% 
+  filter(item1 == "plo") %>%  # Nur "plo" wählen
+  slice_max(correlation, n = 20) %>%  # Die Top 20 Korrelationen auswählen
+  ungroup() %>% 
+  mutate(item2 = reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Korrelation", y = "Wort", title = "Wörter mit höchster Korrelation (PLO)")
+
+# Speichern der Visualisierung für "plo" als PNG-Datei
+ggsave("wort_korrelationen_top20_plo.png", plot = plot_plo, width = 10, height = 6)
