@@ -40,7 +40,7 @@ word_cors <- cleaned_hits_df %>%
 
 # Erstellen eines Graphen aus den Korrelationen (nur Korrelationen > 0.1)
 word_network <- word_cors %>% 
-  filter(correlation > 0.1) %>%  # Nur Korrelationen größer als 0.1 verwenden
+  filter(correlation > 0.08) %>%  # Nur Korrelationen größer als 0.1 verwenden
   graph_from_data_frame(directed = FALSE)  # Ungerichteter Graph erstellen
 
 # Community-Erkennung mit der Louvain-Methode
