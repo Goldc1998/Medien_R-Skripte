@@ -48,7 +48,7 @@ ggsave("First_2_Haeufigste_Woerter.png", plot = first_2_plot, width = 10, height
 
 # Visualisierung der Wörter 3-40
 rest_3_40_plot <- ggplot(rest_3_40, aes(x = reorder(word, n), y = n)) +
-  geom_col(fill = "black", width = 0.3) +  # Balken schmaler machen (adjustiert mit 'width')
+  geom_col(fill = "steelblue", width = 0.3) +  # Balken schmaler machen (adjustiert mit 'width')
   coord_flip() +
   labs(title = "Wörter 3-40 Häufigste Wörter im Gesamtmedienkorpus", 
        x = "Wort", 
@@ -60,7 +60,7 @@ rest_3_40_plot <- ggplot(rest_3_40, aes(x = reorder(word, n), y = n)) +
     axis.title.y = element_text(size = 14),      # Schriftgröße der y-Achsen-Beschriftung
     axis.text.x = element_text(size = 12),       # Schriftgröße der x-Achsen-Werte
     axis.text.y = element_text(size = 12),       # Schriftgröße der y-Achsen-Werte
-    plot.title = element_text(size = 16, face = "bold")  # Schriftgröße des Titels
+    plot.title = element_text(size = 12, face = "bold")  # Schriftgröße des Titels
   )
 
 # Speichern der Visualisierung der Wörter 3-40 als PNG
