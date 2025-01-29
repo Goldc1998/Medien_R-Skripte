@@ -1,5 +1,3 @@
-# Neue Wörter zur Stoppwortliste hinzufügen
-stopwords_list <- c(stopwords_list, "fest", "besonders")
 
 # Berechnung der Gesamtbeiträge der Wörter zum Sentiment
 total_sentiment_contribution <- cleaned_hits_df %>% 
