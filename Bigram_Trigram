@@ -43,7 +43,7 @@ trigram_data <- text_data %>%
   filter(!is.na(word1) & !is.na(word2) & !is.na(word3)) %>%
   mutate(triplet = pmap_chr(list(word1, word2, word3), ~ paste(sort(c(...)), collapse = " "))) %>%  # Sortiere Wörter alphabetisch
   count(triplet, sort = TRUE) %>%
-  rename(trigram = triplet, frequency = n)  # Benenne Spalten für Klarheit
+  rename(trigram = triplet, frequency = n) 
 
 # Speichern der Trigramme als CSV
 write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme.csv")
