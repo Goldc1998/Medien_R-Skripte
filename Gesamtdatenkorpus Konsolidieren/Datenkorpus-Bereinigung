@@ -13,11 +13,11 @@ if (!"Hit" %in% colnames(medien_combined)) {
 }
 
 # Benutzerdefinierte Stopwörter erweitern
-stopwords_combined <- c(stopwords("de"), stopwords("en"), "al", "schon", "wurde", "seit", "immer", 
+stopwords_combined <- c(stopwords("de"), stopwords("en"),"schon", "wurde", "seit", "immer", 
                         "dass", "sei", "mehr", "sagte", "zwei", "drei", "etwa", "jedoch", "viele", 
                         "jahren", "steht", "vergangenen", "wurden", "sagt", "neuen", "jahre", "jahr", 
                         "gibt", "heute", "mal", "erst", "fall", "worden", "neue", "seite", "fast",
-                        "angriffe", "angriffen", "\"", "'", "-", "„", "“", "–", "•", "«", "»", "“")
+                         "\"", "'", "-", "„", "“", "–", "•", "«", "»", "“")
 
 # Text bereinigen: Kleinbuchstaben, Entfernen von Satzzeichen, Zahlen, Sonderzeichen, Stoppwörtern, Whitespace
 cleaned_hits <- medien_combined$Hit %>% 
