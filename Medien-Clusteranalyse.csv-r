@@ -15,7 +15,7 @@ stopwords <- c("dpa", "darauf", "damit", "schreibt", "tageszeitung", "tagesspieg
 replacement_words <- c("staaten" = "staat", "soldaten" = "soldat", "arabische" = "arabien", 
                        "palastinenserfuhrer" = "palastinenser", "muslime" = "muslim")
 
-# Beispiel-Daten einlesen (ersetze dies mit deinem eigenen Datensatz)
+# Beispiel-Daten einlesen 
 medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
 
 # Text bereinigen und in Tokens umwandeln
