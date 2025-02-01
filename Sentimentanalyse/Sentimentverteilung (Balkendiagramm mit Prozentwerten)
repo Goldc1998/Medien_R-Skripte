@@ -1,0 +1,26 @@
+# ---- 2. Sentimentverteilung (Balkendiagramm mit Prozentwerten) ----
+sentiment_distribution <- medien_combined_cleaned %>%
+  mutate(sentiment_category = case_when(
+    sentiment_score > 0 ~ "Positiv",
+    sentiment_score < 0 ~ "Negativ",
+    TRUE ~ "Neutral"
+  )) %>%
+  count(sentiment_category) %>%
+  mutate(percentage = round(n / sum(n) * 100, 1))  # Prozentwerte runden
+
+sentiment_dist_plot <- ggplot(sentiment_distribution, aes(x = sentiment_category, y = percentage, fill = sentiment_category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(percentage, "%")), vjust = -0.5, size = 3) +  # Prozentwerte klein anzeigen
+  labs(title = "Gesamtverhältnis positiver und negativer Sentiments",
+       x = "Sentiment",
+       y = "Prozent") +
+  scale_fill_manual(values = c("Positiv" = "green", "Negativ" = "red", "Neutral" = "gray")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    legend.position = "none"
+  )
+
+ggsave("sentiment_distribution.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
