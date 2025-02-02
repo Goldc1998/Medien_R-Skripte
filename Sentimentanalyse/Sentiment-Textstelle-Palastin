@@ -1,0 +1,102 @@
+# Pakete laden
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+library(lubridate)
+library(tidytext)
+
+# Neue Wörter zur Umkehrungsliste hinzufügen
+reverse_words <- c(
+  "besonders", "gut", "gehofft", "danke", "gutes", "gelungen",
+  "hilfreich", "beeindruckt", "stolz", "verantwortlich",
+  "starken", "weitgehend", "sicher"
+)
+
+# Neue Wörter zur Stoppwortliste hinzufügen (inkl. "gut" und "alten")
+stopwords_list <- c(
+  "nahen", "nahe", "bereit", "stark", "vereinten", "neu",
+  "neue", "neuer", "neuen", "weise", "genau", "alle", "also",
+  "am", "an", "und", "der", "die", "das", "des", "dem", "eine",
+  "ein", "oder", "was", "wo", "warum", "ob", "viele", "über",
+  "mit", "aus", "für", "es", "noch", "mehr", "schnell", "naher",
+  "mochte", "beteiligt", "neues", "besteht",
+  "hohen", "starke", "hoch",
+  # Hier die neuen Stoppwörter hinzufügen:
+  "neue", "neuen", "nahen", "nahe", "bereit", "vereinten", "stark",
+  "gut", "alten"  # Hinzugefügt
+)
+
+# Negative Wörter einlesen und verarbeiten
+negativ <- read.table("SentiWS_v2.0_Negative.txt", fill = TRUE, stringsAsFactors = FALSE, sep = "\t", header = FALSE)
+neg1 <- negativ %>%
+  select(V1, V2) %>%
+  mutate(V1 = as.character(V1)) %>%
+  mutate(V1 = sub("\\|.*", "", V1)) %>%
+  rename(word = V1, sentiment = V2)
+
+einzel_negativ <- strsplit(as.character(negativ$V3), split = ",")
+neg2 <- data.frame(
+  sentiment = rep(negativ$V2, sapply(einzel_negativ, length)),
+  word = unlist(einzel_negativ),
+  stringsAsFactors = FALSE
+)
+
+# Positive Wörter einlesen und verarbeiten
+positiv <- read.table("SentiWS_v2.0_Positive.txt", fill = TRUE, stringsAsFactors = FALSE, sep = "\t", header = FALSE)
+pos1 <- positiv %>%
+  select(V1, V2) %>%
+  mutate(V1 = as.character(V1)) %>%
+  mutate(V1 = sub("\\|.*", "", V1)) %>%
+  rename(word = V1, sentiment = V2)
+
+einzel_positiv <- strsplit(as.character(positiv$V3), split = ",")
+pos2 <- data.frame(
+  sentiment = rep(positiv$V2, sapply(einzel_positiv, length)),
+  word = unlist(einzel_positiv),
+  stringsAsFactors = FALSE
+)
+
+# Daten zusammenfügen
+SentiWS_df <- bind_rows(
+  neg1 %>% mutate(polarity = "negative"),
+  neg2 %>% mutate(polarity = "negative"),
+  pos1 %>% mutate(polarity = "positive"),
+  pos2 %>% mutate(polarity = "positive")
+) %>% 
+  mutate(word = as.character(word)) %>% 
+  distinct(word, .keep_all = TRUE)
+
+# Datensatz laden
+medien_combined_cleaned <- read_csv("Medien_Palastin_bereinigt.csv")
+
+# Datum umwandeln
+medien_combined_cleaned <- medien_combined_cleaned %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  mutate(Year = year(Date))
+
+# Text bereinigen und in Tokens umwandeln, wobei Stoppwörter entfernt werden
+cleaned_hits_df <- medien_combined_cleaned %>%
+  select(NewID, cleaned_hits) %>%
+  unnest_tokens(word, cleaned_hits) %>%
+  mutate(word = tolower(word)) %>%
+  filter(!word %in% stopwords_list)  # Entfernen der Stoppwörter hier
+
+# Sentimentanalyse durchführen
+sentiment_scores <- cleaned_hits_df %>%
+  inner_join(SentiWS_df, by = "word") %>%
+  mutate(
+    sentiment = case_when(
+      word %in% reverse_words ~ -as.numeric(sentiment),
+      TRUE ~ as.numeric(sentiment)
+    )
+  ) %>%
+  filter(sentiment != 0) %>%
+  group_by(NewID) %>%
+  summarize(sentiment_score = mean(sentiment, na.rm = TRUE)) %>%
+  ungroup()
+
+# Verknüpfung der Scores mit dem ursprünglichen Datensatz
+medien_combined_cleaned <- medien_combined_cleaned %>%
+  left_join(sentiment_scores, by = "NewID")
