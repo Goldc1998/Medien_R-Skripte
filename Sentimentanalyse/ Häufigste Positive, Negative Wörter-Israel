@@ -16,7 +16,7 @@ top_positive_contributors <- total_sentiment_contribution %>%
   arrange(desc(total_contribution)) %>%
   head(15)
 
-write.csv(top_positive_contributors, "top_15_positive_contributors.csv", row.names = FALSE)
+write.csv(top_positive_contributors, "top_15_positive_contributors_Israel.csv", row.names = FALSE)
 
 top_negative_contributors <- total_sentiment_contribution %>%
   filter(polarity == "negative") %>%
@@ -48,7 +48,7 @@ table_plot <- ggplot() +
     xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
   )
 
-ggsave("top_15_positive_contributors_table.png", plot = table_plot, width = 12, height = 6, dpi = 300)
+ggsave("top_15_positive_contributors_table_Israel.png", plot = table_plot, width = 12, height = 6, dpi = 300)
 
 # Tabelle der 15 größten negativen Beitragswörter (Wort, Häufigkeit, Sentimentwert, Total Contribution)
 negative_table_plot <- ggplot(top_negative_contributors, aes(x = reorder(word, total_contribution), y = sentiment_score)) +
