@@ -1,76 +1,123 @@
 
+# Liste der Wörter, die du bereitgestellt hast 
+words_list <- c("verletzt", "erschossen", "verurteilt", "radikalen", "radikale", 
+                "angriff", "angriffe", "verurteilte", "abgelehnt", "kritisiert", 
+                "verloren", "schwachen", "schwache", "toten", "verurteilen", "vertrieben",
+                "gute", "wichtige", "wichtiger", "wichtigsten", "wichtigste", "besonders",
+                "verletzte")
+
+# Lade benötigte Bibliotheken
+library(dplyr)
+library(ggplot2)
+library(tm) # Für Stoppwörter
+library(gridExtra) # für tableGrob()
+
+# Stoppwörter aus dem tm-Paket laden
+stopwords_list <- stopwords("de")
+
+# Wenn du eine benutzerdefinierte Liste hast, kannst du diese auch ergänzen:
+custom_stopwords <- c("die", "und", "ist", "mit", "auf", "zu", "der", "ein", "in", "den", "besonders", "scharf") 
+stopwords_list <- unique(c(stopwords_list, custom_stopwords))
+
+# Funktion für gezieltes Stemming: Konvertiert Formen wie "angriff" und "angriffe" in "angriff" und andere Wörter
+manual_stem <- function(word) {
+    # Liste von speziellen Anpassungen
+    replacements <- c("angriffe" = "angriff", "verurteilte" = "verurteilt", 
+                      "radikalen" = "radikal", "radikale" = "radikal", 
+                      "schwachen" = "schwach", "schwache" = "schwach", 
+                      "toten" = "tote", "verurteilen" = "verurteilt", 
+                      "gute" = "gut", "guter" = "gut", "guten" = "gut", "gutes" = "gut", 
+                      "wichtige" = "wichtig", "wichtiger" = "wichtig", 
+                      "wichtigsten" = "wichtig", "wichtigste" = "wichtig", 
+                      "wichtigen" = "wichtig", "wichtiges" = "wichtig", 
+                      "kritisierte" = "kritik", "kritisieren" = "kritik", 
+                      "kritisiert" = "kritik", "verletzte" = "verletzt")
+    
+    # Überprüfen, ob das Wort in den Ersetzungen vorhanden ist und anwenden
+    if (word %in% names(replacements)) {
+        return(replacements[word])
+    } else {
+        return(word)
+    }
+}
+
 # Berechnung der Gesamtbeiträge der Wörter zum Sentiment
 total_sentiment_contribution <- cleaned_hits_df %>% 
-  inner_join(SentiWS_df, by = "word") %>%
-  filter(!word %in% stopwords_list) %>%  # Stoppwörter filtern
-  mutate(sentiment_contribution = sentiment * n()) %>%
-  group_by(word, polarity) %>%
-  summarize(sentiment_score = mean(sentiment, na.rm = TRUE), 
-            frequency = n(), 
-            total_contribution = sentiment_score * frequency, # Sentimentwert mal Häufigkeit
-            .groups = "drop")
+    inner_join(SentiWS_df, by = "word") %>%  # Mit deinem Sentiment-Wörterbuch verbinden
+    filter(!word %in% stopwords_list) %>%  # Stoppwörter aus der Analyse entfernen
+    mutate(word = sapply(word, manual_stem)) %>%  # Stemming auf jedes Wort anwenden
+    mutate(sentiment_contribution = sentiment * n()) %>%  # Berechnung des Beitrags jedes Wortes
+    group_by(word, polarity) %>%
+    summarize(sentiment_score = mean(sentiment, na.rm = TRUE), 
+              frequency = n(), 
+              total_contribution = sentiment_score * frequency, # Berechnung der Gesamtauswirkung
+              .groups = "drop")
 
-# Die 15 größten positiven und negativen Beiträge nach total_contribution extrahieren
+# Extrahiere die 15 größten positiven und negativen Beiträge
 top_positive_contributors <- total_sentiment_contribution %>%
-  filter(polarity == "positive") %>%
-  arrange(desc(total_contribution)) %>%
-  head(15)
+    filter(polarity == "positive") %>%
+    arrange(desc(total_contribution)) %>%
+    head(15)
 
-write.csv(top_positive_contributors, "top_15_positive_contributors_Israel.csv", row.names = FALSE)
+write.csv(top_positive_contributors, "top_15_positive_contributors_Israel.csv", row.names = FALSE) 
 
 top_negative_contributors <- total_sentiment_contribution %>%
-  filter(polarity == "negative") %>%
-  arrange(total_contribution) %>%
-  head(15)
+    filter(polarity == "negative") %>%
+    arrange(total_contribution) %>%
+    head(15)
 
-write.csv(top_negative_contributors, "top_15_negative_contributors.csv", row.names = FALSE)
+write.csv(top_negative_contributors, "top_15_negative_contributors_Israel.csv", row.names = FALSE) 
 
 # Tabelle der 15 größten positiven Beitragswörter (Wort, Häufigkeit, Sentimentwert, Total Contribution)
 positive_table_plot <- ggplot(top_positive_contributors, aes(x = reorder(word, total_contribution), y = sentiment_score)) +
-  geom_point() +
-  labs(title = "Top 15 Positive Contributors - Tabelle",
-       x = "Begriff",
-       y = "Sentimentwert") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 16, face = "bold"),
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    geom_point() +
+    labs(title = "Top 15 Positive Sentiment Contributors (Israel)",  # Überschrift hinzugefügt 
+         x = "Wörter",
+         y = "Sentiment Score") +
+    theme_minimal() +
+    theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5), # Überschrift zentrieren
+          axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Tabelle als Plot erzeugen und als PNG speichern
 positive_table <- top_positive_contributors %>%
-  select(word, frequency, sentiment_score, total_contribution)
+    select(word, frequency, sentiment_score, total_contribution)
 
 table_plot <- ggplot() +
-  theme_void() +
-  annotation_custom(
-    grob = tableGrob(positive_table),
-    xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
-  )
+    theme_void() +
+    annotation_custom(
+        grob = tableGrob(positive_table), # Hier verwenden wir tableGrob() aus gridExtra
+        xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
+    ) +
+    ggtitle("Top 15 Positive Sentiment Contributors Table (Israel)") +  # Die Überschrift für die Tabelle hinzugefügt 
+    theme(plot.title = element_text(hjust = 0.5))  # Überschrift zentrieren
 
-ggsave("top_15_positive_contributors_table_Israel.png", plot = table_plot, width = 12, height = 6, dpi = 300)
+ggsave("top_15_positive_contributors_table_Israel.png", plot = table_plot, width = 12, height = 6, dpi = 300) 
 
 # Tabelle der 15 größten negativen Beitragswörter (Wort, Häufigkeit, Sentimentwert, Total Contribution)
 negative_table_plot <- ggplot(top_negative_contributors, aes(x = reorder(word, total_contribution), y = sentiment_score)) +
-  geom_point() +
-  labs(title = "Top 15 Negative Contributors - Tabelle",
-       x = "Begriff",
-       y = "Sentimentwert") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 16, face = "bold"),
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    geom_point() +
+    labs(title = "Top 15 Negative Sentiment Contributors (Israel)",  # Überschrift hinzugefügt 
+         x = "Wörter",
+         y = "Sentiment Score") +
+    theme_minimal() +
+    theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5), # Überschrift zentrieren
+          axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Tabelle als Plot erzeugen und als PNG speichern
 negative_table <- top_negative_contributors %>%
-  select(word, frequency, sentiment_score, total_contribution)
+    select(word, frequency, sentiment_score, total_contribution)
 
 table_plot_negative <- ggplot() +
-  theme_void() +
-  annotation_custom(
-    grob = tableGrob(negative_table),
-    xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
-  )
+    theme_void() +
+    annotation_custom(
+        grob = tableGrob(negative_table), # Hier ebenfalls tableGrob() aus gridExtra
+        xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
+    ) +
+    ggtitle("Top 15 Negative Sentiment Contributors (Israel) Table") +  # Die Überschrift für die Tabelle hinzugefügt
+    theme(plot.title = element_text(hjust = 0.5))  # Überschrift zentrieren
 
-ggsave("top_15_negative_contributors_table.png", plot = table_plot_negative, width = 12, height = 6, dpi = 300)
+ggsave("top_15_negative_contributors_table-Israel.png", plot = table_plot_negative, width = 12, height = 6, dpi = 300) 
