@@ -18,12 +18,12 @@ filtered_data <- monthly_sentiment %>%
 
 sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
   geom_line(color = "blue", size = 1) +
-  labs(title = "Durchschnittlicher Sentimentwert 2000–2023",
+  labs(title = "Durchschnittlicher Sentimentwert (Palästina) 2000–2023",  # "Palästina" hinzugefügt
        x = "Jahr",
        y = "Durchschnittlicher Sentimentwert") +
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 16, face = "bold"),
+    plot.title = element_text(size = 16),
     axis.text = element_text(size = 10),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.title = element_text(size = 14)
@@ -31,7 +31,7 @@ sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")
   scale_x_date(date_labels = "%Y", date_breaks = "1 year")  # Jährliche Achsenbeschriftung
 
 # Speichern des Plots
-ggsave("sentiment_2000_2023.png", plot = sentiment_plot, width = 12, height = 6, dpi = 300)
+ggsave("sentiment_2000_2023_palestina.png", plot = sentiment_plot, width = 12, height = 6, dpi = 300)
 
 # ---- 2. Sentimentverteilung (Balkendiagramm mit Prozentwerten) ----
 sentiment_distribution <- medien_combined_cleaned %>%
@@ -46,20 +46,20 @@ sentiment_distribution <- medien_combined_cleaned %>%
 sentiment_dist_plot <- ggplot(sentiment_distribution, aes(x = sentiment_category, y = percentage, fill = sentiment_category)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = paste0(percentage, "%")), vjust = -0.5, size = 5) +  # Prozentwerte anzeigen
-  labs(title = "Gesamtverhältnis positiver und negativer Sentiments",
+  labs(title = "Gesamtverhältnis positiver und negativer Sentiments (Palästina)",
        x = "Sentiment",
        y = "Prozent") +
   scale_fill_manual(values = c("Positiv" = "green", "Negativ" = "red", "Neutral" = "gray")) +
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 16, face = "bold"),
+    plot.title = element_text(size = 16),
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 14),
     legend.position = "none"
   )
 
 # Speichern des Balkendiagramms
-ggsave("sentiment_distribution.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
+ggsave("sentiment_distribution_palestina.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
 
 # ---- 3. Diagramme für verschiedene Zeiträume ----
 plot_sentiment_for_period <- function(start_year, end_year, filename) {
@@ -68,12 +68,12 @@ plot_sentiment_for_period <- function(start_year, end_year, filename) {
   
   sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
     geom_line(color = "blue", size = 1) +
-    labs(title = paste("Durchschnittlicher Sentimentwert", start_year, "-", end_year),
+    labs(title = paste("Durchschnittlicher Sentimentwert (Palästina)", start_year, "-", end_year),
          x = "Jahr",
          y = "Durchschnittlicher Sentimentwert") +
     theme_minimal() +
     theme(
-      plot.title = element_text(size = 16, face = "bold"),
+      plot.title = element_text(size = 16),
       axis.text = element_text(size = 10),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       axis.title = element_text(size = 14)
@@ -84,10 +84,10 @@ plot_sentiment_for_period <- function(start_year, end_year, filename) {
 }
 
 # Diagramme für spezifische Zeiträume speichern
-plot_sentiment_for_period(2000, 2005, "sentiment_2000_2005.png")
-plot_sentiment_for_period(2008, 2009, "sentiment_2008_2009.png")
-plot_sentiment_for_period(2012, 2014, "sentiment_2012_2014.png")
-plot_sentiment_for_period(2019, 2023, "sentiment_2019_2023.png")
+plot_sentiment_for_period(2000, 2005, "sentiment_2000_2005_palestina.png")
+plot_sentiment_for_period(2008, 2009, "sentiment_2008_2009_palestina.png")
+plot_sentiment_for_period(2012, 2014, "sentiment_2012_2014_palestina.png")
+plot_sentiment_for_period(2019, 2023, "sentiment_2019_2023_palestina.png")
 
 # ---- 4. Zusätzliche Analyse: Durchschnittliches Sentiment pro Jahr ----
 yearly_sentiment <- medien_combined_cleaned %>%
@@ -97,16 +97,17 @@ yearly_sentiment <- medien_combined_cleaned %>%
 yearly_sentiment_plot <- ggplot(yearly_sentiment, aes(x = Year, y = average_sentiment, group = 1)) +
   geom_line(color = "blue", size = 1) +
   geom_point(color = "red", size = 3) +
-  labs(title = "Durchschnittlicher Sentimentwert pro Jahr",
+  labs(title = "Durchschnittlicher Sentimentwert pro Jahr (Palästina)",  # "Palästina" hinzugefügt
        x = "Jahr",
        y = "Durchschnittlicher Sentimentwert") +
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 16, face = "bold"),
+    plot.title = element_text(size = 16),
     axis.text = element_text(size = 12),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.title = element_text(size = 14)
   )
 
-ggsave("yearly_sentiment.png", plot = yearly_sentiment_plot, width = 10, height = 5, dpi = 300)
+ggsave("yearly_sentiment_palestina.png", plot = yearly_sentiment_plot, width = 10, height = 5, dpi = 300)
+
 
