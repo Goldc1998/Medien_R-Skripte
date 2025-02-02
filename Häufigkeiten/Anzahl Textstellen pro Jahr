@@ -40,29 +40,6 @@ ggsave("Artikel_Pro_Jahr.png", plot = article_plot, width = 8, height = 6)
 # Speichere die Tabelle der Artikel pro Jahr als CSV
 write_csv(articles_per_year, "Artikel_Pro_Jahr.csv")
 
-# **2. Die 10 Monate mit den häufigsten Textstellen**
-articles_per_month <- medien_combined_cleaned %>%
-  filter(!is.na(Date)) %>%
-  mutate(Month = format(Date, "%Y-%m")) %>%
-  count(Month) %>%
-  arrange(desc(n)) %>%
-  slice(1:10)
 
-# Visualisierung der 10 Monate mit den häufigsten Textstellen
-monthly_plot <- ggplot(articles_per_month, aes(x = reorder(Month, n), y = n)) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +
-  labs(
-    title = "10 Monate mit den häufigsten Vorkommen an Textstellen",
-    x = "Monat und Jahr",
-    y = "Häufigkeit der Textstellen"
-  ) +
-  theme_minimal()
-
-# Speichere das Balkendiagramm als PNG
-ggsave("Top10_Monate.png", plot = monthly_plot, width = 10, height = 6)
-
-# Speichere die Tabelle der 10 Monate als CSV
-write_csv(articles_per_month, "Top10_Monate.csv")
 
 
