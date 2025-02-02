@@ -1,102 +1,112 @@
-# Pakete laden
-library(dplyr)
-library(stringr)
-library(tidyr)
-library(readr)
+# Notwendige Bibliotheken laden
 library(ggplot2)
-library(lubridate)
-library(tidytext)
+library(dplyr)
 
-# Neue Wörter zur Umkehrungsliste hinzufügen
-reverse_words <- c(
-  "besonders", "gut", "gehofft", "danke", "gutes", "gelungen",
-  "hilfreich", "beeindruckt", "stolz", "verantwortlich",
-  "starken", "weitgehend", "sicher"
-)
-
-# Neue Wörter zur Stoppwortliste hinzufügen (inkl. "gut" und "alten")
-stopwords_list <- c(
-  "nahen", "nahe", "bereit", "stark", "vereinten", "neu",
-  "neue", "neuer", "neuen", "weise", "genau", "alle", "also",
-  "am", "an", "und", "der", "die", "das", "des", "dem", "eine",
-  "ein", "oder", "was", "wo", "warum", "ob", "viele", "über",
-  "mit", "aus", "für", "es", "noch", "mehr", "schnell", "naher",
-  "mochte", "beteiligt", "neues", "besteht",
-  "hohen", "starke", "hoch",
-  # Hier die neuen Stoppwörter hinzufügen:
-  "neue", "neuen", "nahen", "nahe", "bereit", "vereinten", "stark",
-  "gut", "alten"  # Hinzugefügt
-)
-
-# Negative Wörter einlesen und verarbeiten
-negativ <- read.table("SentiWS_v2.0_Negative.txt", fill = TRUE, stringsAsFactors = FALSE, sep = "\t", header = FALSE)
-neg1 <- negativ %>%
-  select(V1, V2) %>%
-  mutate(V1 = as.character(V1)) %>%
-  mutate(V1 = sub("\\|.*", "", V1)) %>%
-  rename(word = V1, sentiment = V2)
-
-einzel_negativ <- strsplit(as.character(negativ$V3), split = ",")
-neg2 <- data.frame(
-  sentiment = rep(negativ$V2, sapply(einzel_negativ, length)),
-  word = unlist(einzel_negativ),
-  stringsAsFactors = FALSE
-)
-
-# Positive Wörter einlesen und verarbeiten
-positiv <- read.table("SentiWS_v2.0_Positive.txt", fill = TRUE, stringsAsFactors = FALSE, sep = "\t", header = FALSE)
-pos1 <- positiv %>%
-  select(V1, V2) %>%
-  mutate(V1 = as.character(V1)) %>%
-  mutate(V1 = sub("\\|.*", "", V1)) %>%
-  rename(word = V1, sentiment = V2)
-
-einzel_positiv <- strsplit(as.character(positiv$V3), split = ",")
-pos2 <- data.frame(
-  sentiment = rep(positiv$V2, sapply(einzel_positiv, length)),
-  word = unlist(einzel_positiv),
-  stringsAsFactors = FALSE
-)
-
-# Daten zusammenfügen
-SentiWS_df <- bind_rows(
-  neg1 %>% mutate(polarity = "negative"),
-  neg2 %>% mutate(polarity = "negative"),
-  pos1 %>% mutate(polarity = "positive"),
-  pos2 %>% mutate(polarity = "positive")
-) %>% 
-  mutate(word = as.character(word)) %>% 
-  distinct(word, .keep_all = TRUE)
-
-# Datensatz laden
-medien_combined_cleaned <- read_csv("Medien_Israel_bereinigt.csv")
-
-# Datum umwandeln
+# Sicherstellen, dass die `Date`-Spalte im richtigen Format ist
 medien_combined_cleaned <- medien_combined_cleaned %>%
-  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
-  mutate(Year = year(Date))
+  mutate(Date = as.Date(Date),  # Falls `Date` noch kein Date-Format hat, konvertieren
+         YearMonth = format(Date, "%Y-%m"))  # Jahr-Monat für die Zeitreihe erstellen
 
-# Text bereinigen und in Tokens umwandeln, wobei Stoppwörter entfernt werden
-cleaned_hits_df <- medien_combined_cleaned %>%
-  select(NewID, cleaned_hits) %>%
-  unnest_tokens(word, cleaned_hits) %>%
-  mutate(word = tolower(word)) %>%
-  filter(!word %in% stopwords_list)  # Entfernen der Stoppwörter hier
+# Durchschnittlichen Sentimentwert pro Monat berechnen
+monthly_sentiment <- medien_combined_cleaned %>%
+  group_by(YearMonth) %>%
+  summarize(average_sentiment = mean(sentiment_score, na.rm = TRUE), .groups = "drop")
 
-# Sentimentanalyse durchführen
-sentiment_scores <- cleaned_hits_df %>%
-  inner_join(SentiWS_df, by = "word") %>%
-  mutate(
-    sentiment = case_when(
-      word %in% reverse_words ~ -as.numeric(sentiment),
-      TRUE ~ as.numeric(sentiment)
-    )
-  ) %>%
-  filter(sentiment != 0) %>%
-  group_by(NewID) %>%
-  summarize(sentiment_score = mean(sentiment, na.rm = TRUE)) %>%
-  ungroup()
+# ---- 1. Gesamt-Plot für 2000–2023 mit jährlicher X-Achse ----
+filtered_data <- monthly_sentiment %>%
+  filter(YearMonth >= "2000-01" & YearMonth <= "2023-12")
 
-# Verknüpfung der Scores mit dem ursprünglichen Datensatz
-medien_combined_cleaned <- medien_combined_cleaned %>%
-  left_join(sentiment_scores, by = "NewID")
+sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
+  geom_line(color = "blue", size = 1) +
+  labs(title = "Durchschnittlicher Sentimentwert 2000–2023",
+       x = "Jahr",
+       y = "Durchschnittlicher Sentimentwert") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title = element_text(size = 14)
+  ) +
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year")  # Jährliche Achsenbeschriftung
+
+# Speichern des Plots
+ggsave("sentiment_2000_2023.png", plot = sentiment_plot, width = 12, height = 6, dpi = 300)
+
+# ---- 2. Sentimentverteilung (Balkendiagramm mit Prozentwerten) ----
+sentiment_distribution <- medien_combined_cleaned %>%
+  mutate(sentiment_category = case_when(
+    sentiment_score > 0 ~ "Positiv",
+    sentiment_score < 0 ~ "Negativ",
+    TRUE ~ "Neutral"
+  )) %>%
+  count(sentiment_category) %>%
+  mutate(percentage = round(n / sum(n) * 100, 1))  # Prozentwerte berechnen
+
+sentiment_dist_plot <- ggplot(sentiment_distribution, aes(x = sentiment_category, y = percentage, fill = sentiment_category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(percentage, "%")), vjust = -0.5, size = 5) +  # Prozentwerte anzeigen
+  labs(title = "Gesamtverhältnis positiver und negativer Sentiments",
+       x = "Sentiment",
+       y = "Prozent") +
+  scale_fill_manual(values = c("Positiv" = "green", "Negativ" = "red", "Neutral" = "gray")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    legend.position = "none"
+  )
+
+# Speichern des Balkendiagramms
+ggsave("sentiment_distribution.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
+
+# ---- 3. Diagramme für verschiedene Zeiträume ----
+plot_sentiment_for_period <- function(start_year, end_year, filename) {
+  filtered_data <- monthly_sentiment %>%
+    filter(YearMonth >= paste0(start_year, "-01") & YearMonth <= paste0(end_year, "-12"))
+  
+  sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
+    geom_line(color = "blue", size = 1) +
+    labs(title = paste("Durchschnittlicher Sentimentwert", start_year, "-", end_year),
+         x = "Jahr",
+         y = "Durchschnittlicher Sentimentwert") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      axis.text = element_text(size = 10),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      axis.title = element_text(size = 14)
+    ) +
+    scale_x_date(date_labels = "%b %Y", date_breaks = "1 month")  # Monatliche Achsenbeschriftung
+
+  ggsave(filename, plot = sentiment_plot, width = 12, height = 6, dpi = 300)
+}
+
+# Diagramme für spezifische Zeiträume speichern
+plot_sentiment_for_period(2000, 2005, "sentiment_2000_2005.png")
+plot_sentiment_for_period(2008, 2009, "sentiment_2008_2009.png")
+plot_sentiment_for_period(2012, 2014, "sentiment_2012_2014.png")
+plot_sentiment_for_period(2019, 2023, "sentiment_2019_2023.png")
+
+# ---- 4. Zusätzliche Analyse: Durchschnittliches Sentiment pro Jahr ----
+yearly_sentiment <- medien_combined_cleaned %>%
+  group_by(Year = format(Date, "%Y")) %>%
+  summarize(average_sentiment = mean(sentiment_score, na.rm = TRUE), .groups = "drop")
+
+yearly_sentiment_plot <- ggplot(yearly_sentiment, aes(x = Year, y = average_sentiment, group = 1)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "red", size = 3) +
+  labs(title = "Durchschnittlicher Sentimentwert pro Jahr",
+       x = "Jahr",
+       y = "Durchschnittlicher Sentimentwert") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.title = element_text(size = 14)
+  )
+
+ggsave("yearly_sentiment.png", plot = yearly_sentiment_plot, width = 10, height = 5, dpi = 300)
+
