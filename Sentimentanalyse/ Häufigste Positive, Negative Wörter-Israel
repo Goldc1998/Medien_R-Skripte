@@ -1,10 +1,5 @@
 
-# Liste der Wörter, die du bereitgestellt hast 
-words_list <- c("verletzt", "erschossen", "verurteilt", "radikalen", "radikale", 
-                "angriff", "angriffe", "verurteilte", "abgelehnt", "kritisiert", 
-                "verloren", "schwachen", "schwache", "toten", "verurteilen", "vertrieben",
-                "gute", "wichtige", "wichtiger", "wichtigsten", "wichtigste", "besonders",
-                "verletzte")
+
 
 # Lade benötigte Bibliotheken
 library(dplyr)
@@ -15,7 +10,6 @@ library(gridExtra) # für tableGrob()
 # Stoppwörter aus dem tm-Paket laden
 stopwords_list <- stopwords("de")
 
-# Wenn du eine benutzerdefinierte Liste hast, kannst du diese auch ergänzen:
 custom_stopwords <- c("die", "und", "ist", "mit", "auf", "zu", "der", "ein", "in", "den", "besonders", "scharf") 
 stopwords_list <- unique(c(stopwords_list, custom_stopwords))
 
