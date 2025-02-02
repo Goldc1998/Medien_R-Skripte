@@ -1,1 +1,33 @@
+# Notwendige Bibliotheken laden
+library(ggplot2)
+library(dplyr)
 
+# Sentiment-Kategorien erstellen
+sentiment_distribution <- medien_combined_cleaned %>%
+  mutate(sentiment_category = case_when(
+    sentiment_score > 0 ~ "Positiv",
+    sentiment_score < 0 ~ "Negativ",
+    TRUE ~ "Neutral"
+  )) %>%
+  count(sentiment_category) %>%
+  mutate(percentage = round(n / sum(n) * 100, 1))  # Prozentwerte berechnen
+
+# Balkendiagramm erstellen
+sentiment_dist_plot <- ggplot(sentiment_distribution, aes(x = sentiment_category, y = percentage, fill = sentiment_category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)")), vjust = -0.5, size = 5) +  # Absolute Zahlen + Prozentwerte anzeigen
+  labs(title = "Anteil positiver, negativer und neutraler Textstellen zu Israel",
+       x = "Sentiment",
+       y = "Anteil (%)") +
+  scale_fill_manual(values = c("Positiv" = "green", "Negativ" = "red", "Neutral" = "gray")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16),  # Kein Fettdruck
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    legend.position = "none"
+  )
+
+# Speichern des Balkendiagramms
+ggsave("sentiment_distribution_palastin
+.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
