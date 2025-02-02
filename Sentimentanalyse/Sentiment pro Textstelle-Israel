@@ -70,7 +70,7 @@ SentiWS_df <- bind_rows(
   distinct(word, .keep_all = TRUE)
 
 # Datensatz laden
-medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
+medien_combined_cleaned <- read_csv("Medien_Israel_bereinigt.csv")
 
 # Datum umwandeln
 medien_combined_cleaned <- medien_combined_cleaned %>%
