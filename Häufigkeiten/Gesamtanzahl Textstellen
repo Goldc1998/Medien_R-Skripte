@@ -1,0 +1,9 @@
+ Gesamtanzahl der gefundenen Textstellen**
+total_text_count <- nrow(medien_combined_cleaned)
+
+# Ausgabe der Gesamtanzahl
+cat("Die insgesamt gefundenen Textstellen betragen:", total_text_count, "\n")
+
+# Speichere die Gesamtanzahl in eine CSV-Datei
+total_count_df <- data.frame(Total_Text_Count = total_text_count)
+write_csv(total_count_df, "Gesamtanzahl_Textstellen.csv")
