@@ -5,7 +5,7 @@ if (length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
 
 # Datei laden
-medien_combined <- read_csv("MEDIEN.Gesamt.csv")
+medien_combined <- read_csv("MEDIEN.Israel.csv")
 
 # Überprüfen, ob die 'Hit'-Spalte vorhanden ist
 if (!"Hit" %in% colnames(medien_combined)) {
