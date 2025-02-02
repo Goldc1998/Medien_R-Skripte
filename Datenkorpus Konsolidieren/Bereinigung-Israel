@@ -1,0 +1,70 @@
+# Benötigte Pakete installieren und laden
+required_packages <- c("readr", "dplyr", "tm", "textstem", "ggplot2", "tidyverse", "tidytext", "SnowballC", "stringr")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+if (length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+
+# Datei laden
+medien_combined <- read_csv("MEDIEN.Gesamt.csv")
+
+# Überprüfen, ob die 'Hit'-Spalte vorhanden ist
+if (!"Hit" %in% colnames(medien_combined)) {
+  stop("Die 'Hit'-Spalte fehlt in der Datei.")
+}
+
+# Benutzerdefinierte Stopwörter erweitern
+stopwords_combined <- c(stopwords("de"), stopwords("en"),"schon", "wurde", "seit", "immer", 
+                        "dass", "sei", "mehr", "sagte", "zwei", "drei", "etwa", "jedoch", "viele", 
+                        "jahren", "steht", "vergangenen", "wurden", "sagt", "neuen", "jahre", "jahr", 
+                        "gibt", "heute", "mal", "erst", "fall", "worden", "neue", "seite", "fast",
+                         "\"", "'", "-", "„", "“", "–", "•", "«", "»", "“")
+
+# Text bereinigen: Kleinbuchstaben, Entfernen von Satzzeichen, Zahlen, Sonderzeichen, Stoppwörtern, Whitespace
+cleaned_hits <- medien_combined$Hit %>% 
+  tolower() %>% 
+  str_replace_all("[[:punct:]]", " ") %>%  # Entfernt Satzzeichen und Sonderzeichen
+  str_replace_all("[[:space:]]+", " ") %>%  # Entfernt überflüssige Leerzeichen
+  removeNumbers() %>% 
+  removeWords(stopwords_combined) %>% 
+  stripWhitespace()
+
+# Ersetzen von spezifischen Begriffen für Konsistenz
+cleaned_hits <- cleaned_hits %>% 
+  gsub("\\b(israel[a-z]*)\\b", "israel", .) %>%  # Normalisiert alle Formen von "Israel"
+  gsub("\\bpalästin[a-z]*\\b", "palastin", .) %>%  # Normalisiert alle Formen von "Palästina"
+  gsub("\\bangriffe\\b|\\bangriffen\\b", "angriff", .)  # Normalisiert "Angriffe" und "Angriffen"
+
+# Sicherstellen, dass Stemming erfolgreich angewendet wurde
+cleaned_hits <- wordStem(cleaned_hits, language = "de")  # Stemming auf die Wörter anwenden
+
+# Lemmatisierung der Textdaten als zusätzlicher Schritt
+cleaned_hits <- textstem::lemmatize_strings(cleaned_hits)
+
+# Hinzufügen der bereinigten "Hit"-Spalte zu den originalen Daten
+medien_combined$cleaned_hits <- cleaned_hits
+
+# Duplikate basierend auf der "Hit"-Spalte entfernen
+medien_combined_cleaned <- medien_combined %>% 
+  distinct(Hit, .keep_all = TRUE)
+
+# Filtere nur die Artikel von 2000 bis 2023 basierend auf der 'Date'-Spalte
+if ("Date" %in% colnames(medien_combined_cleaned)) {
+  medien_combined_cleaned <- medien_combined_cleaned %>% 
+    filter(as.Date(Date, format="%Y-%m-%d") >= as.Date("2000-01-01") & 
+             as.Date(Date, format="%Y-%m-%d") <= as.Date("2023-12-31"))
+}
+
+# Sortiere die Daten nach dem Datum
+if ("Date" %in% colnames(medien_combined_cleaned)) {
+  medien_combined_cleaned <- medien_combined_cleaned %>% 
+    arrange(as.Date(Date, format="%Y-%m-%d"))
+}
+
+# Füge eine neue ID-Spalte hinzu
+medien_combined_cleaned <- medien_combined_cleaned %>% 
+  mutate(NewID = row_number())
+
+# Datei speichern
+write_csv(medien_combined_cleaned, "Medien_Israel_bereinigt.csv")
+
+cat("Die Datei wurde erfolgreich bereinigt, sortiert und gespeichert.\n")
