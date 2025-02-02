@@ -18,95 +18,11 @@ filtered_data <- monthly_sentiment %>%
 
 sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
   geom_line(color = "blue", size = 1) +
-  labs(title = "Durchschnittlicher Sentimentwert 2000–2023",
+  labs(title = "Durchschnittlicher Sentimentwert pro Monat-Israel, (2000–2023)",
        x = "Jahr",
        y = "Durchschnittlicher Sentimentwert") +
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    axis.text = element_text(size = 10),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-    axis.title = element_text(size = 14)
-  ) +
-  scale_x_date(date_labels = "%Y", date_breaks = "1 year")  # Jährliche Achsenbeschriftung
-
-# Speichern des Plots
-ggsave("sentiment_2000_2023.png", plot = sentiment_plot, width = 12, height = 6, dpi = 300)
-
-# ---- 2. Sentimentverteilung (Balkendiagramm mit Prozentwerten) ----
-sentiment_distribution <- medien_combined_cleaned %>%
-  mutate(sentiment_category = case_when(
-    sentiment_score > 0 ~ "Positiv",
-    sentiment_score < 0 ~ "Negativ",
-    TRUE ~ "Neutral"
-  )) %>%
-  count(sentiment_category) %>%
-  mutate(percentage = round(n / sum(n) * 100, 1))  # Prozentwerte berechnen
-
-sentiment_dist_plot <- ggplot(sentiment_distribution, aes(x = sentiment_category, y = percentage, fill = sentiment_category)) +
-  geom_bar(stat = "identity") +
-  geom_text(aes(label = paste0(percentage, "%")), vjust = -0.5, size = 5) +  # Prozentwerte anzeigen
-  labs(title = "Gesamtverhältnis positiver und negativer Sentiments",
-       x = "Sentiment",
-       y = "Prozent") +
-  scale_fill_manual(values = c("Positiv" = "green", "Negativ" = "red", "Neutral" = "gray")) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 14),
-    legend.position = "none"
-  )
-
-# Speichern des Balkendiagramms
-ggsave("sentiment_distribution.png", plot = sentiment_dist_plot, width = 8, height = 6, dpi = 300)
-
-# ---- 3. Diagramme für verschiedene Zeiträume ----
-plot_sentiment_for_period <- function(start_year, end_year, filename) {
-  filtered_data <- monthly_sentiment %>%
-    filter(YearMonth >= paste0(start_year, "-01") & YearMonth <= paste0(end_year, "-12"))
-  
-  sentiment_plot <- ggplot(filtered_data, aes(x = as.Date(paste0(YearMonth, "-01")), y = average_sentiment)) +
-    geom_line(color = "blue", size = 1) +
-    labs(title = paste("Durchschnittlicher Sentimentwert", start_year, "-", end_year),
-         x = "Jahr",
-         y = "Durchschnittlicher Sentimentwert") +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(size = 16, face = "bold"),
-      axis.text = element_text(size = 10),
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-      axis.title = element_text(size = 14)
-    ) +
-    scale_x_date(date_labels = "%b %Y", date_breaks = "1 month")  # Monatliche Achsenbeschriftung
-
-  ggsave(filename, plot = sentiment_plot, width = 12, height = 6, dpi = 300)
-}
-
-# Diagramme für spezifische Zeiträume speichern
-plot_sentiment_for_period(2000, 2005, "sentiment_2000_2005.png")
-plot_sentiment_for_period(2008, 2009, "sentiment_2008_2009.png")
-plot_sentiment_for_period(2012, 2014, "sentiment_2012_2014.png")
-plot_sentiment_for_period(2019, 2023, "sentiment_2019_2023.png")
-
-# ---- 4. Zusätzliche Analyse: Durchschnittliches Sentiment pro Jahr ----
-yearly_sentiment <- medien_combined_cleaned %>%
-  group_by(Year = format(Date, "%Y")) %>%
-  summarize(average_sentiment = mean(sentiment_score, na.rm = TRUE), .groups = "drop")
-
-yearly_sentiment_plot <- ggplot(yearly_sentiment, aes(x = Year, y = average_sentiment, group = 1)) +
-  geom_line(color = "blue", size = 1) +
-  geom_point(color = "red", size = 3) +
-  labs(title = "Durchschnittlicher Sentimentwert pro Jahr",
-       x = "Jahr",
-       y = "Durchschnittlicher Sentimentwert") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    axis.text = element_text(size = 12),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
-    axis.title = element_text(size = 14)
-  )
-
-ggsave("yearly_sentiment.png", plot = yearly_sentiment_plot, width = 10, height = 5, dpi = 300)
+    plot.title = element_text(size = 16),
+    axis.text
 
