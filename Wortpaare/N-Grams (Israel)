@@ -12,15 +12,40 @@ if (!"cleaned_hits" %in% colnames(text_data)) {
   stop("Die Spalte 'cleaned_hits' fehlt in der Daten-Datei.")
 }
 
+# Ersetzungen definieren: ersetze die angegebenen Wörter
+replacements <- c(
+  "staates" = "staat",
+  "ministerpräsidenten" = "ministerpräsident",
+  "staaten" = "staat",
+  "nahen" = "nah",
+  "osten" = "ost",
+  "prasidenten" = "prasident",
+  "militante" = "militant",
+  "verhandlungen" = "verhandlung",
+  "besetzten" = "besetzt",
+  "gebiete" = "gebiet",
+  "gebieten" = "gebiet",
+  "arabische" = "arabisch",
+  "arabischen" = "arabisch",
+  "konflikte" = "konflikt",
+  "konfliktes" = "konflikt",
+  "regierungen" = "regierung",
+  "fluchtlinge" = "fluchtling"
+)
+
+# Wende die Ersetzungen auf die Spalte 'cleaned_hits' an
+text_data <- text_data %>%
+  mutate(cleaned_hits = str_replace_all(cleaned_hits, replacements))
+
 ### HÄUFIGSTE BIGRAMME ###
 bigram_data <- text_data %>%
   unnest_tokens(bigram, cleaned_hits, token = "ngrams", n = 2) %>%  # Erstelle Bigramme
-  filter(str_detect(bigram, "israel")) %>%  # Filtere nach Bigrammen, die „israel“ enthalten
+  filter(str_detect(bigram, "israel")) %>%  # Filtere nach Bigrammen, die "israel" enthalten
   separate(bigram, into = c("word1", "word2"), sep = " ", extra = "merge", fill = "right") %>%
   filter(!is.na(word1) & !is.na(word2)) %>%
-  mutate(pair = if_else(word1 < word2, paste(word1, word2), paste(word2, word1))) %>%  # Unabhängig von Reihenfolge
+  mutate(pair = if_else(word1 < word2, paste(word1, word2), paste(word2, word1))) %>%  # Unabhängig von der Reihenfolge
   count(pair, sort = TRUE) %>%
-  rename(bigram = pair, frequency = n)  # Benenne Spalten für Klarheit
+  rename(bigram = pair, frequency = n)  # Benenne Spalten zur Klarheit
 
 # Speichern der Bigramme als CSV
 write_csv(bigram_data[1:30, ], "30_Haeufigste_Bigramme_Israel.csv")
@@ -40,12 +65,12 @@ print("Die 30 häufigsten Bigramme wurden als CSV und PNG gespeichert.")
 ### HÄUFIGSTE TRIGRAMME ###
 trigram_data <- text_data %>%
   unnest_tokens(trigram, cleaned_hits, token = "ngrams", n = 3) %>%  # Erstelle Trigramme
-  filter(str_detect(trigram, "israel")) %>%  # Filtere nach Trigrammen, die „israel“ enthalten
+  filter(str_detect(trigram, "israel")) %>%  # Filtere nach Trigrammen, die "israel" enthalten
   separate(trigram, into = c("word1", "word2", "word3"), sep = " ", extra = "merge", fill = "right") %>%
   filter(!is.na(word1) & !is.na(word2) & !is.na(word3)) %>%
   mutate(triplet = pmap_chr(list(word1, word2, word3), ~ paste(sort(c(...)), collapse = " "))) %>%  # Sortiere Wörter alphabetisch
   count(triplet, sort = TRUE) %>%
-  rename(trigram = triplet, frequency = n)  # Benenne Spalten für Klarheit
+  rename(trigram = triplet, frequency = n)  # Benenne Spalten zur Klarheit
 
 # Speichern der Trigramme als CSV
 write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme_Israel.csv")
@@ -60,4 +85,5 @@ trigram_plot <- ggplot(trigram_data[1:30, ], aes(x = reorder(trigram, frequency)
   theme_minimal()
 
 ggsave("30_Haeufigste_Trigramme_Israel.png", trigram_plot, width = 10, height = 8)
-print("Die 30 häufigsten Trigramme wurden als CSV und PNG gespeichert.)
+print("Die 30 häufigsten Trigramme wurden als CSV und PNG gespeichert.")
+
