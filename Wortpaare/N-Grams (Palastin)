@@ -47,20 +47,21 @@ bigram_data <- text_data %>%
   count(pair, sort = TRUE) %>%
   rename(bigram = pair, frequency = n)  # Benenne Spalten zur Klarheit
 
-# Speichern der Bigramme als CSV
+# Speichern der Bigramme als CSV (die Top 30, inklusive des ersten Ergebnisses)
 write_csv(bigram_data[1:30, ], "30_Haeufigste_Bigramme_Palastin.csv")
 
-# Visualisierung der Bigramme als PNG
-bigram_plot <- ggplot(bigram_data[1:30, ], aes(x = reorder(bigram, frequency), y = frequency)) +
+# Visualisierung der Bigramme als PNG (ohne das erste Ergebnis)
+bigram_plot <- ggplot(bigram_data[-1, ][1:30, ], aes(x = reorder(bigram, frequency), y = frequency)) +
   geom_col(fill = "steelblue") +
   coord_flip() +
-  labs(title = "30 häufigste Bigramme mit 'Palästin'",
+  labs(title = "30 häufigste Bigramme mit 'Palästin' (2-30)",
        x = "Bigramme",
        y = "Häufigkeit") +
   theme_minimal()
 
 ggsave("30_Haeufigste_Bigramme_Palastin.png", bigram_plot, width = 10, height = 8)
 print("Die 30 häufigsten Bigramme wurden als CSV und PNG gespeichert.")
+
 
 ### HÄUFIGSTE TRIGRAMME ###
 trigram_data <- text_data %>%
@@ -72,11 +73,11 @@ trigram_data <- text_data %>%
   count(triplet, sort = TRUE) %>%
   rename(trigram = triplet, frequency = n)  # Benenne Spalten zur Klarheit
 
-# Speichern der Trigramme als CSV
+# Speichern der Trigramme als CSV (die Top 30, inklusive des ersten Ergebnisses)
 write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme_Palastin.csv")
 
-# Visualisierung der Trigramme als PNG
-trigram_plot <- ggplot(trigram_data[1:30, ], aes(x = reorder(trigram, frequency), y = frequency)) +
+# Visualisierung der Trigramme als PNG (ohne das erste Ergebnis)
+trigram_plot <- ggplot(trigram_data [1:30, ], aes(x = reorder(trigram, frequency), y = frequency)) +
   geom_col(fill = "darkgreen") +
   coord_flip() +
   labs(title = "30 häufigste Trigramme mit 'Palästin'",
