@@ -64,3 +64,39 @@ word_pairs_filtered %>%
 ggsave("word_pairs_network_min2700.png", width = 10, height = 6)
 
 cat("Die Visualisierung wurde als 'word_pairs_network_min_2700.png' gespeichert.\n")
+# Benötigte Pakete laden
+if (!require(dplyr)) install.packages("dplyr")
+if (!require(gridExtra)) install.packages("gridExtra")
+library(dplyr)
+library(gridExtra)
+
+# CSV-Datei einlesen (passen Sie den Dateinamen/Pfad an)
+pairs <- read.csv("word_pairs_min2700.csv", stringsAsFactors = FALSE)
+
+# Sortieren nach Häufigkeit absteigend
+sorted_pairs <- pairs %>% 
+  arrange(desc(n))
+
+# Erste Tabelle: Zeilen 1 bis 25
+top_25 <- sorted_pairs[1:25, ]
+
+# Zweite Tabelle: Zeilen 26 bis 50
+next_25 <- sorted_pairs[26:50, ]
+
+# Speichern der beiden Tabellen als CSV-Dateien
+write.csv(top_25, "word_pairs_1_25.csv", row.names = FALSE)
+write.csv(next_25, "word_pairs_26_50.csv", row.names = FALSE)
+
+# Speichern der beiden Tabellen als PNG-Dateien mit Überschriften
+# Tabelle 1-25 mit Überschrift "Anzahl häufigster Wortpaare (1-25)"
+png("word_pairs_1_25.png", width = 800, height = 600)
+grid.arrange(tableGrob(top_25), top = "Anzahl häufigster Wortpaare (1-25)")
+dev.off()
+
+# Tabelle 26-50 mit Überschrift "Anzahl häufigster Wortpaare (26-50)"
+png("word_pairs_26_50.png", width = 800, height = 600)
+grid.arrange(tableGrob(next_25), top = "Anzahl häufigster Wortpaare (26-50)")
+dev.off()
+
+cat("Die CSV-Dateien 'word_pairs_1_25.csv' und 'word_pairs_26_50.csv' sowie die PNG-Dateien 'word_pairs_1_25.png' und 'word_pairs_26_50.png' wurden erstellt.\n")
+
