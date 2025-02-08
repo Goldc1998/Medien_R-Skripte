@@ -1,5 +1,5 @@
 # Benötigte Pakete installieren und laden
-required_packages <- c("readr", "dplyr", "tm", "textstem", "ggplot2", "tidyverse", "tidytext", "SnowballC", "stringr")
+required_packages <- c("readr", "dplyr", "tm", "ggplot2", "tidyverse", "tidytext", "SnowballC", "stringr")
 new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
@@ -13,11 +13,11 @@ if (!"Hit" %in% colnames(medien_combined)) {
 }
 
 # Benutzerdefinierte Stopwörter erweitern
-stopwords_combined <- c(stopwords("de"), stopwords("en"),"schon", "wurde", "seit", "immer", 
+stopwords_combined <- c(stopwords("de"), stopwords("en"), "schon", "wurde", "seit", "immer", 
                         "dass", "sei", "mehr", "sagte", "zwei", "drei", "etwa", "jedoch", "viele", 
                         "jahren", "steht", "vergangenen", "wurden", "sagt", "neuen", "jahre", "jahr", 
                         "gibt", "heute", "mal", "erst", "fall", "worden", "neue", "seite", "fast",
-                         "\"", "'", "-", "„", "“", "–", "•", "«", "»", "“")
+                        "\"", "'", "-", "„", "“", "–", "•", "«", "»", "“")
 
 # Text bereinigen: Kleinbuchstaben, Entfernen von Satzzeichen, Zahlen, Sonderzeichen, Stoppwörtern, Whitespace
 cleaned_hits <- medien_combined$Hit %>% 
@@ -34,11 +34,8 @@ cleaned_hits <- cleaned_hits %>%
   gsub("\\bpalästin[a-z]*\\b", "palastin", .) %>%  # Normalisiert alle Formen von "Palästina"
   gsub("\\bangriffe\\b|\\bangriffen\\b", "angriff", .)  # Normalisiert "Angriffe" und "Angriffen"
 
-# Sicherstellen, dass Stemming erfolgreich angewendet wurde
-cleaned_hits <- wordStem(cleaned_hits, language = "de")  # Stemming auf die Wörter anwenden
-
-# Lemmatisierung der Textdaten als zusätzlicher Schritt
-cleaned_hits <- textstem::lemmatize_strings(cleaned_hits)
+# Stemming auf die Wörter anwenden
+cleaned_hits <- wordStem(cleaned_hits, language = "de")  
 
 # Hinzufügen der bereinigten "Hit"-Spalte zu den originalen Daten
 medien_combined$cleaned_hits <- cleaned_hits
@@ -68,3 +65,4 @@ medien_combined_cleaned <- medien_combined_cleaned %>%
 write_csv(medien_combined_cleaned, "Medien_Gesamt_bereinigt.csv")
 
 cat("Die Datei wurde erfolgreich bereinigt, sortiert und gespeichert.\n")
+
