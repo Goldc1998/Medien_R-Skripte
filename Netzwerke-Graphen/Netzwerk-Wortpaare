@@ -1,4 +1,4 @@
-# Benötigte Pakete installieren und laden
+# Sicherstellen, dass alle benötigten Pakete installiert sind
 if (!require(tm)) install.packages("tm")
 if (!require(slam)) install.packages("slam")
 if (!require(widyr)) install.packages("widyr")
@@ -6,6 +6,8 @@ if (!require(ggraph)) install.packages("ggraph")
 if (!require(igraph)) install.packages("igraph")
 if (!require(dplyr)) install.packages("dplyr")
 if (!require(tidytext)) install.packages("tidytext")
+if (!require(stringr)) install.packages("stringr")
+if (!require(SnowballC)) install.packages("SnowballC")
 
 library(tm)
 library(slam)
@@ -14,6 +16,8 @@ library(ggraph)
 library(igraph)
 library(dplyr)
 library(tidytext)
+library(stringr)
+library(SnowballC)
 
 # Den Korpus laden (Pfad anpassen, falls nötig)
 data <- read.csv("Medien_Gesamt_bereinigt.csv", stringsAsFactors = FALSE)
@@ -26,12 +30,46 @@ if (!"cleaned_hits" %in% colnames(data)) {
 # Nur die Spalte "cleaned_hits" verwenden
 cleaned_hits <- data$cleaned_hits
 
+# Ersetzungsregeln definieren
+replacements <- c(
+  "staates" = "staat",
+  "ministerpräsidenten" = "ministerpräsident",
+  "staaten" = "staat",
+  "nahen" = "nah",
+  "osten" = "ost",
+  "prasidenten" = "prasident",
+  "militante" = "militant",
+  "verhandlungen" = "verhandlung",
+  "besetzten" = "besetzt",
+  "gebiete" = "gebiet",
+  "gebieten" = "gebiet", 
+  "gebietn" = "gebiet",
+  "arabische" = "arabisch", 
+  "arabischn" = "arabisch",
+  "arabischen" = "arabisch",
+  "konflikte" = "konflikt",
+  "konfliktes" = "konflikt",
+  "regierungen" = "regierung",
+  "fluchtlinge" = "fluchtling"
+)
+
+# Anwenden der Ersetzungen auf jeden Text in cleaned_hits
+for (pattern in names(replacements)) {
+  replacement <- replacements[[pattern]]
+  # ignore.case=TRUE kann hinzugefügt werden, falls Groß-/Kleinschreibung ignoriert werden soll
+  cleaned_hits <- str_replace_all(cleaned_hits, pattern, replacement)
+}
+
 # Definiere die Liste der Stopwörter, einschließlich der hinzugefügten Wörter
-custom_stopwords <- c("ab", "wegen", "ersten", "dabei")
+custom_stopwords <- c("ab", "wegen", "ersten", "dabei", "sowie")
 
 # Tokenisieren der "cleaned_hits"-Spalte in einzelne Wörter
 hits_words <- tibble(id = 1:length(cleaned_hits), text = cleaned_hits) %>%
   unnest_tokens(word, text)  # Tokenisieren in einzelne Wörter
+
+# Anwenden des Stemmings auf die Tokens
+hits_words <- hits_words %>%
+  mutate(word = wordStem(word, language = "german"))
 
 # Entferne Stopwörter
 hits_words_clean <- hits_words %>%
@@ -45,11 +83,16 @@ word_pairs <- hits_words_clean %>%
 word_pairs_filtered <- word_pairs %>% 
   filter(n >= 2700)  # Filtert nur Paare mit mindestens 2700 Vorkommen
 
+# Exportiere die gefilterten Wortpaare als CSV (sortiert nach Häufigkeit absteigend)
+write.csv(word_pairs_filtered, "word_pairs_min2700.csv", row.names = FALSE)
+cat("Die CSV-Datei 'word_pairs_min2700.csv' wurde erstellt.\n")
+
 # Visualisierung der Wortpaare aus "cleaned_hits" als Netzwerk
 set.seed(1234)
-word_pairs_filtered %>% 
-  graph_from_data_frame() %>% 
-  ggraph(layout = "fr") +
+graph_obj <- word_pairs_filtered %>% 
+  graph_from_data_frame()
+
+plot <- ggraph(graph_obj, layout = "fr") +
   geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "steelblue") +
   geom_node_point(size = 3) +  # Kleinere Knotenpunkte (von 5 auf 3 reduziert)
   geom_node_text(aes(label = name), repel = TRUE, 
@@ -61,9 +104,9 @@ word_pairs_filtered %>%
   theme(legend.position = "none")  # Entfernen der Legende
 
 # Speichern der Visualisierung
-ggsave("word_pairs_network_min2700.png", width = 10, height = 6)
+ggsave("word_pairs_network_min2700.png", plot = plot, width = 10, height = 6)
+cat("Die Visualisierung wurde als 'word_pairs_network_min2700.png' gespeichert.\n")
 
-cat("Die Visualisierung wurde als 'word_pairs_network_min_2700.png' gespeichert.\n")
 # Benötigte Pakete laden
 if (!require(dplyr)) install.packages("dplyr")
 if (!require(gridExtra)) install.packages("gridExtra")
