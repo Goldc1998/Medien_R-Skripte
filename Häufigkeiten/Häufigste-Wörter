@@ -1,5 +1,5 @@
-# Sicherstellen, dass alle benötigten Pakete installiert sind
-packages <- c("dplyr", "readr", "tidytext", "stringr", "stopwords")
+# Benötigte Pakete installieren und laden
+packages <- c("dplyr", "readr", "tidytext", "stringr", "stopwords", "SnowballC", "ggplot2")
 new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new.packages)) install.packages(new.packages)
 lapply(packages, library, character.only = TRUE)
@@ -10,12 +10,13 @@ text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
 # Stoppwörter definieren
 custom_stop_words <- c(stopwords::stopwords("de"), "sind", "wird", "dass", "diese", "einem")
 
-# Extrahieren und Zählen der häufigsten Wörter
+# Tokenisierung, Stemming und Zählen der häufigsten Wörter
 word_counts <- text_data %>%
   unnest_tokens(word, cleaned_hits) %>%               # Tokenisierung in einzelne Wörter
   filter(!word %in% custom_stop_words) %>%            # Entfernen der Stoppwörter
+  mutate(word = wordStem(word, language = "de")) %>%  # Stemming anwenden
   count(word, sort = TRUE) %>%                        # Zählen der Wortfrequenzen
-  top_n(50, n)                                        # Top 50 häufigste Wörter
+  slice_max(n, n = 50)                                # Top 50 häufigste Wörter mit slice_max()
 
 # Aufteilen in die ersten beiden und die Wörter 3-40
 first_2 <- word_counts[1:2, ]
@@ -28,19 +29,19 @@ write_csv(word_counts, "Top_50_Haeufigste_Woerter.csv")  # Gesamt-CSV mit allen 
 
 # Visualisierung der ersten beiden häufigsten Wörter
 first_2_plot <- ggplot(first_2, aes(x = reorder(word, n), y = n)) +
-  geom_col(fill = "black", width = 0.3) +  # Balken schmaler machen (adjustiert mit 'width')
+  geom_col(fill = "black", width = 0.3) +  
   coord_flip() +
   labs(title = "Die ersten 2 Häufigsten Wörter im Gesamtmedienkorpus", 
        x = "Wort", 
-       y = "Häufigkeit des Vorkommens") +  # Beschriftung der y-Achse geändert
+       y = "Häufigkeit des Vorkommens") +  
   theme_minimal() +
-  scale_y_continuous(labels = scales::comma) +  # Stellt sicher, dass die Zahlen korrekt angezeigt werden
+  scale_y_continuous(labels = scales::comma) +  
   theme(
-    axis.title.x = element_text(size = 14),      # Schriftgröße der x-Achsen-Beschriftung
-    axis.title.y = element_text(size = 14),      # Schriftgröße der y-Achsen-Beschriftung
-    axis.text.x = element_text(size = 12),       # Schriftgröße der x-Achsen-Werte
-    axis.text.y = element_text(size = 12),       # Schriftgröße der y-Achsen-Werte
-    plot.title = element_text(size = 16, face = "bold")  # Schriftgröße des Titels
+    axis.title.x = element_text(size = 14),      
+    axis.title.y = element_text(size = 14),      
+    axis.text.x = element_text(size = 12),       
+    axis.text.y = element_text(size = 12),       
+    plot.title = element_text(size = 16, face = "bold")  
   )
 
 # Speichern der Visualisierung der ersten beiden als PNG
@@ -48,19 +49,19 @@ ggsave("First_2_Haeufigste_Woerter.png", plot = first_2_plot, width = 10, height
 
 # Visualisierung der Wörter 3-40
 rest_3_40_plot <- ggplot(rest_3_40, aes(x = reorder(word, n), y = n)) +
-  geom_col(fill = "steelblue", width = 0.3) +  # Balken schmaler machen (adjustiert mit 'width')
+  geom_col(fill = "steelblue", width = 0.3) +  
   coord_flip() +
   labs(title = "Wörter 3-40 Häufigste Wörter im Gesamtmedienkorpus", 
        x = "Wort", 
-       y = "Häufigkeit des Vorkommens") +  # Beschriftung der y-Achse geändert
+       y = "Häufigkeit des Vorkommens") +  
   theme_minimal() +
-  scale_y_continuous(labels = scales::comma) +  # Stellt sicher, dass die Zahlen korrekt angezeigt werden
+  scale_y_continuous(labels = scales::comma) +  
   theme(
-    axis.title.x = element_text(size = 14),      # Schriftgröße der x-Achsen-Beschriftung
-    axis.title.y = element_text(size = 14),      # Schriftgröße der y-Achsen-Beschriftung
-    axis.text.x = element_text(size = 12),       # Schriftgröße der x-Achsen-Werte
-    axis.text.y = element_text(size = 12),       # Schriftgröße der y-Achsen-Werte
-    plot.title = element_text(size = 12, face = "bold")  # Schriftgröße des Titels
+    axis.title.x = element_text(size = 14),      
+    axis.title.y = element_text(size = 14),      
+    axis.text.x = element_text(size = 12),       
+    axis.text.y = element_text(size = 12),       
+    plot.title = element_text(size = 12, face = "bold")  
   )
 
 # Speichern der Visualisierung der Wörter 3-40 als PNG
@@ -68,3 +69,4 @@ ggsave("Rest_3_40_Haeufigste_Woerter.png", plot = rest_3_40_plot, width = 10, he
 
 # Ausgabe der ersten 6 Zeilen der Ergebnis-Tabelle
 print(head(word_counts))
+
