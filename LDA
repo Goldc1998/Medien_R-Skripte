@@ -1,0 +1,79 @@
+# Notwendige Pakete laden
+library(topicmodels)
+library(slam)
+library(broom)
+library(tidytext)
+library(tm)
+library(SnowballC)
+
+# === 1. Datei einlesen ===
+data <- read.csv("/Users/cedricgold/Downloads/Medien_Gesamt_bereinigt.csv", stringsAsFactors = FALSE)
+
+# Prüfen, ob die erwartete Spalte existiert
+if (!"cleaned_hits" %in% colnames(data)) {
+  stop("Fehler: Die Spalte 'cleaned_hits' wurde nicht gefunden. Überprüfe die Spaltennamen mit colnames(data).")
+}
+
+# === 2. Nur die relevante Spalte nutzen ===
+text_data <- data$cleaned_hits
+
+# Fehlende Werte entfernen
+text_data <- text_data[!is.na(text_data)]
+
+# === 3. Benutzerdefinierte Stoppwörter definieren ===
+custom_stopwords <- c("erst", "geboren", "berlin", "muss", "streif", "tag", "offent", "jassi")
+
+# === 4. Textvorverarbeitung ===
+docs <- Corpus(VectorSource(text_data))
+docs <- tm_map(docs, content_transformer(tolower))  # Kleinbuchstaben
+docs <- tm_map(docs, removePunctuation)  # Satzzeichen entfernen
+docs <- tm_map(docs, removeNumbers)  # Zahlen entfernen
+docs <- tm_map(docs, removeWords, stopwords("de"))  # Deutsche Stoppwörter entfernen
+docs <- tm_map(docs, removeWords, custom_stopwords)  # Benutzerdefinierte Stoppwörter entfernen
+docs <- tm_map(docs, stemDocument, language = "german")  # Stemming
+
+# === 5. Dokument-Term-Matrix (DTM) erstellen ===
+dtm <- DocumentTermMatrix(docs)
+dtm <- as.matrix(dtm)  # Umwandeln für weitere Verarbeitung
+
+# === 6. Seltene Begriffe entfernen ===
+row_totals <- slam::row_sums(dtm)
+dtm_filtered <- dtm[row_totals > 0, ]
+
+if (nrow(dtm_filtered) == 0) {
+  stop("Fehler: Nach der Filterung enthält die DTM keine Dokumente mehr. Prüfe die Vorverarbeitung!")
+}
+
+# === 7. LDA-Modell trainieren ===
+num_topics <- 8  # Anzahl der Themen festlegen
+lda_model <- LDA(dtm_filtered, k = num_topics, method = "VEM", control = list(seed = 1234, alpha = 0.1))
+
+# === 8. Top-Wörter pro Thema extrahieren ===
+topics <- tidy(lda_model, matrix = "beta")
+
+top_terms_with_probabilities <- list()
+for (i in 1:num_topics) {
+  topic_data <- topics[topics$topic == i, ]
+  top_terms <- topic_data[order(topic_data$beta, decreasing = TRUE), ][1:15, ]
+  top_terms_with_probabilities[[paste("Topic", i)]] <- top_terms
+}
+
+# Ausgabe der Top-Wörter pro Thema
+cat("\nTop-Wörter pro Thema mit Wahrscheinlichkeiten (Beta-Werte):\n")
+print(top_terms_with_probabilities)
+
+# === 9. Dokumentenverteilung über Themen berechnen ===
+topic_distribution <- lda_model@gamma
+document_topics <- apply(topic_distribution, 1, which.max)
+topic_counts <- table(document_topics)
+topic_percentages <- prop.table(topic_counts) * 100
+
+# Ergebnisse als DataFrame
+topic_results <- data.frame(
+  Thema = names(topic_percentages),
+  Prozent = as.numeric(topic_percentages)
+)
+topic_results <- topic_results[order(-topic_results$Prozent), ]
+
+# Endergebnis ausgeben
+print(topic_results)
