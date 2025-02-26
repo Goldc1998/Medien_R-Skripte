@@ -10,9 +10,8 @@ library(tidytext)
 
 # Neue Wörter zur Umkehrungsliste hinzufügen
 reverse_words <- c(
-  "besonders", "gut", "gehofft", "danke", "gutes", "gelungen",
-  "hilfreich", "beeindruckt", "stolz", "verantwortlich",
-  "starken", "weitgehend", "sicher"
+  "besonders", "gehofft", "danke", "gelungen", "stolz", "verantwortlich",
+  "starken", "weitgehend", , "stark")
 )
 
 # Neue Wörter zur Stoppwortliste hinzufügen (inkl. "gut" und "alten")
@@ -23,10 +22,10 @@ stopwords_list <- c(
   "ein", "oder", "was", "wo", "warum", "ob", "viele", "über",
   "mit", "aus", "für", "es", "noch", "mehr", "schnell", "naher",
   "mochte", "beteiligt", "neues", "besteht",
-  "hohen", "starke", "hoch",
+  "hohen", "hoch",
   # Hier die neuen Stoppwörter hinzufügen:
   "neue", "neuen", "nahen", "nahe", "bereit", "vereinten", "stark",
-  "gut", "alten"  # Hinzugefügt
+, "alt"  # Hinzugefügt
 )
 
 # Negative Wörter einlesen und verarbeiten
