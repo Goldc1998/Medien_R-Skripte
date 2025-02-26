@@ -11,17 +11,6 @@ library(widyr)
 # Beispiel-Daten einlesen (ersetze dies mit deinem eigenen Datensatz)
 medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
 
-# Vereinheitlichung der Begriffe
-replacement_words <- c("staaten" = "staat", 
-                       "soldaten" = "soldat", 
-                       "arabische" = "arabien", 
-                       "palastinenserfuhrer" = "palastinenser", 
-                       "muslime" = "muslim",
-                       "islamistischer" = "islamistisch", 
-                       "islamistische" = "islamistisch", 
-                       "islamischer" = "islamisch", 
-                       "islamischen" = "islamisch",
-                       "islamistischen" = "islamistisch")  # Hinzugefügte Ersetzung
 
 # Text bereinigen und in Tokens umwandeln
 cleaned_hits_df <- medien_combined_cleaned %>% 
@@ -40,7 +29,7 @@ word_cors <- cleaned_hits_df %>%
   pairwise_cor(word, NewID, sort = TRUE)
 
 # Liste der Begriffe
-terms <- c("abbas", "plo", "hamas", "fatah", "palastina")
+terms <- c("abbas", "plo", "hamas", "fatah", "palastin")
 
 # Schleife über alle Begriffe und Visualisierung erstellen
 for (term in terms) {
