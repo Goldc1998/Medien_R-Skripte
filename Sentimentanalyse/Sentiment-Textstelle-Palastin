@@ -7,14 +7,8 @@ library(ggplot2)
 library(lubridate)
 library(tidytext)
 
-# Neue Wörter zur Umkehrungsliste hinzufügen
-reverse_words <- c(
-  "besonders", "gut", "gehofft", "danke", "gutes", "gelungen",
-  "hilfreich", "beeindruckt", "stolz", "verantwortlich",
-  "starken", "weitgehend", "sicher"
-)
 
-# Neue Wörter zur Stoppwortliste hinzufügen (inkl. "gut" und "alten")
+# Neue Wörter zur Stoppwortliste hinzufügen 
 stopwords_list <- c(
   "nahen", "nahe", "bereit", "stark", "vereinten", "neu",
   "neue", "neuer", "neuen", "weise", "genau", "alle", "also",
@@ -56,6 +50,12 @@ pos2 <- data.frame(
   sentiment = rep(positiv$V2, sapply(einzel_positiv, length)),
   word = unlist(einzel_positiv),
   stringsAsFactors = FALSE
+)
+#Wörter zur Umkehrungsliste hinzufügen
+reverse_words <- c(
+  "besonders",  "gehofft", "danke", "gelungen",
+  "hilfreich", "beeindruckt", "stolz", "verantwortlich",
+  "stark", "weitgehend", "sicher"
 )
 
 # Daten zusammenfügen
