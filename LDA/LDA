@@ -77,3 +77,21 @@ topic_results <- topic_results[order(-topic_results$Prozent), ]
 
 # Endergebnis ausgeben
 print(topic_results)
+# === 10. Ergebnisse pro Thema als separate CSVs speichern ===
+
+# Erstelle einen Unterordner in Downloads, um die CSVs zu organisieren
+output_dir <- "/Users/cedricgold/Downloads/LDA_Top_Words/"
+dir.create(output_dir, showWarnings = FALSE)
+
+# Speichern der Top-Wörter pro Thema als einzelne CSVs
+for (topic in names(top_terms_with_probabilities)) {
+  file_name <- paste0(output_dir, gsub(" ", "_", topic), ".csv")
+  write.csv(top_terms_with_probabilities[[topic]], file_name, row.names = FALSE)
+}
+
+# Speichern der Dokumentenverteilung über Themen
+write.csv(topic_results, "/Users/cedricgold/Downloads/LDA_Topic_Distribution.csv", row.names = FALSE)
+
+cat("Ergebnisse wurden erfolgreich gespeichert in:\n")
+cat("- Ordner: /Users/cedricgold/Downloads/LDA_Top_Words/ (enthält CSVs für jedes Thema)\n")
+cat("- /Users/cedricgold/Downloads/LDA_Topic_Distribution.csv\n")
