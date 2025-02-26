@@ -7,34 +7,6 @@ library(ggplot2)
 library(tm) # Für Stoppwörter
 library(gridExtra) # für tableGrob()
 
-# Stoppwörter aus dem tm-Paket laden
-stopwords_list <- stopwords("de")
-
-custom_stopwords <- c("die", "und", "ist", "mit", "auf", "zu", "der", "ein", "in", "den", "besonders", "scharf") 
-stopwords_list <- unique(c(stopwords_list, custom_stopwords))
-
-# Funktion für gezieltes Stemming: Konvertiert Formen wie "angriff" und "angriffe" in "angriff" und andere Wörter
-manual_stem <- function(word) {
-    # Liste von speziellen Anpassungen
-    replacements <- c("angriffe" = "angriff", "verurteilte" = "verurteilt", 
-                      "radikalen" = "radikal", "radikale" = "radikal", 
-                      "schwachen" = "schwach", "schwache" = "schwach", 
-                      "toten" = "tote", "verurteilen" = "verurteilt", 
-                      "gute" = "gut", "guter" = "gut", "guten" = "gut", "gutes" = "gut", 
-                      "wichtige" = "wichtig", "wichtiger" = "wichtig", 
-                      "wichtigsten" = "wichtig", "wichtigste" = "wichtig", 
-                      "wichtigen" = "wichtig", "wichtiges" = "wichtig", 
-                      "kritisierte" = "kritik", "kritisieren" = "kritik", 
-                      "kritisiert" = "kritik", "verletzte" = "verletzt")
-    
-    # Überprüfen, ob das Wort in den Ersetzungen vorhanden ist und anwenden
-    if (word %in% names(replacements)) {
-        return(replacements[word])
-    } else {
-        return(word)
-    }
-}
-
 # Berechnung der Gesamtbeiträge der Wörter zum Sentiment
 total_sentiment_contribution <- cleaned_hits_df %>% 
     inner_join(SentiWS_df, by = "word") %>%  # Mit deinem Sentiment-Wörterbuch verbinden
