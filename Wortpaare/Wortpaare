@@ -30,39 +30,6 @@ if (!"cleaned_hits" %in% colnames(data)) {
 # Nur die Spalte "cleaned_hits" verwenden
 cleaned_hits <- data$cleaned_hits
 
-# Ersetzungsregeln definieren
-replacements <- c(
-  "staates" = "staat",
-  "ministerpräsidenten" = "ministerpräsident",
-  "staaten" = "staat",
-  "nahen" = "nah",
-  "osten" = "ost",
-  "prasidenten" = "prasident",
-  "militante" = "militant",
-  "verhandlungen" = "verhandlung",
-  "besetzten" = "besetzt",
-  "gebiete" = "gebiet",
-  "gebieten" = "gebiet", 
-  "gebietn" = "gebiet",
-  "arabische" = "arabisch", 
-  "arabischn" = "arabisch",
-  "arabischen" = "arabisch",
-  "konflikte" = "konflikt",
-  "konfliktes" = "konflikt",
-  "regierungen" = "regierung",
-  "fluchtlinge" = "fluchtling"
-)
-
-# Anwenden der Ersetzungen auf jeden Text in cleaned_hits
-for (pattern in names(replacements)) {
-  replacement <- replacements[[pattern]]
-  # ignore.case=TRUE kann hinzugefügt werden, falls Groß-/Kleinschreibung ignoriert werden soll
-  cleaned_hits <- str_replace_all(cleaned_hits, pattern, replacement)
-}
-
-# Definiere die Liste der Stopwörter, einschließlich der hinzugefügten Wörter
-custom_stopwords <- c("ab", "wegen", "ersten", "dabei", "sowie")
-
 # Tokenisieren der "cleaned_hits"-Spalte in einzelne Wörter
 hits_words <- tibble(id = 1:length(cleaned_hits), text = cleaned_hits) %>%
   unnest_tokens(word, text)  # Tokenisieren in einzelne Wörter
