@@ -12,11 +12,6 @@ if (!"cleaned_hits" %in% colnames(text_data)) {
   stop("Die Spalte 'cleaned_hits' fehlt in der Daten-Datei.")
 }
 
-
-# Wende die Ersetzungen auf die Spalte 'cleaned_hits' an
-text_data <- text_data %>%
-  mutate(cleaned_hits = str_replace_all(cleaned_hits, replacements))
-
 ### HÄUFIGSTE BIGRAMME ###
 bigram_data <- text_data %>%
   unnest_tokens(bigram, cleaned_hits, token = "ngrams", n = 2) %>%  # Erstelle Bigramme
