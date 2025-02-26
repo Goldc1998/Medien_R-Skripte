@@ -12,9 +12,6 @@ if (!"cleaned_hits" %in% colnames(text_data)) {
     stop("Die Spalte 'cleaned_hits' fehlt in der Daten-Datei.")
 }
 
-# Wende die Ersetzungen auf die Spalte 'cleaned_hits' an
-text_data <- text_data %>%
-    mutate(cleaned_hits = str_replace_all(cleaned_hits, replacements))
 
 ### HÄUFIGSTE BIGRAMME ###
 bigram_data <- text_data %>%
@@ -56,7 +53,7 @@ trigram_data <- text_data %>%
            word3 = wordStem(word3, language = "de")) %>%
     mutate(triplet = pmap_chr(list(word1, word2, word3), ~ paste(sort(c(...)), collapse = " "))) %>%  # Sortiere Wörter alphabetisch
     count(triplet, sort = TRUE) %>%
-    rename(trigram = triplet, frequency = n)  # Benenne Spalten zur Klarheit
+    rename(trigram = triplet, frequency = n) 
 
 # Speichern der Trigramme als CSV (die Top 30, inklusive des ersten Ergebnisses)
 write_csv(trigram_data[1:30, ], "30_Haeufigste_Trigramme_Israel.csv")
