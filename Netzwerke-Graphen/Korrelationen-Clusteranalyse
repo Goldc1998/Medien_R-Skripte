@@ -5,15 +5,7 @@ library(widyr)       # Paarweise Korrelationen und Assoziationen
 library(readr)       # CSV-Dateien einlesen
 library(tidyr)       # Für das Zusammenführen von Wörtern in einer Zeile
 
-# Stoppwörter definieren
-stopwords <- c("dpa", "darauf", "damit", "schreibt", "tageszeitung", "tagesspiegel", "klar", 
-               "dann", "statt", "zu", "von", "bei", "zur", "auch", "dieser", "anderer", 
-               "finden", "falls", "mehr", "andere", "nur", "nicht", "mal", "um", "auf", 
-               "haben", "noch", "ist", "an", "dass", "in", "den", "hier", "z", "f")
 
-# Vereinheitlichung der Begriffe
-replacement_words <- c("staaten" = "staat", "soldaten" = "soldat", "arabische" = "arabien", 
-                       "palastinenserfuhrer" = "palastinenser", "muslime" = "muslim")
 
 # Beispiel-Daten einlesen 
 medien_combined_cleaned <- read_csv("Medien_Gesamt_bereinigt.csv")
