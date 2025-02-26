@@ -32,7 +32,7 @@ word_cors <- cleaned_hits_df %>%
 # Visualisierungen für die genannten Wörter (Top 20 Korrelationen):
 
 # Liste der Begriffe
-terms <- c("fatah", "angriff", "netanjahu", "siedlung", "abbas", "israel", "likud", "knesset", "verteidigung")
+terms <- c("netanjahu", "abbas", "israel", "likud", "knesset", "gaza",  "westjordanland", "jerusalem")
 
 # Schleife über alle Begriffe und Visualisierung erstellen
 for (term in terms) {
