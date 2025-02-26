@@ -13,15 +13,6 @@ text_data <- read_csv("Medien_Gesamt_bereinigt.csv")
 print(head(text_data))
 print(str(text_data))
 
-# Vereinheitlichung der Begriffe
-replacement_words <- c("ministerprasidenten" = "ministerpräsident", 
-                       "präsidenten" = "präsident", 
-                       "flüchtlige" = "flüchtling", 
-                       "ostens" = "osten", 
-                       "beziehungen" = "beziehung", 
-                       "angriffe" = "angriff", 
-                       "judischen" = "judisch", 
-                       "vereinigten" = "vereinigte")
 
 # Füge NewID-Spalte als Integer hinzu
 text_data <- text_data %>% 
